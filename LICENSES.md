@@ -1,6 +1,6 @@
-# DESCRIPTION 
+# LICENSES
 
-The dbt Fusion Monorepo uses multiple licenses, shown below.
+The `dbt-fusion` repository uses multiple licenses, shown below.
 
 Unless otherwise specified, every folder and file in this repository is licensed under the Elastic License 2.0 (ELv2).
 
@@ -12,7 +12,7 @@ Unless otherwise specified, every folder and file in this repository is licensed
 
 
 ---
-Elastic License 2.0
+# Elastic License 2.0
 
 ## Acceptance
 
@@ -295,7 +295,7 @@ these terms.
       same "printed page" as the copyright notice for easier
       identification within third-party archives.
 
-   Copyright 2019 Elastic and contributors
+   Copyright 2025 dbt Labs, Inc.
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
