@@ -1,0 +1,36 @@
+# Ignore anything in any directory called target
+target/
+dbt_packages/
+dbt_internal_packages/
+# Ignore only the top-level datasets directory
+/datasets
+# Ignore antlr directories
+.antlr
+*.jar
+dist/
+
+.DS_Store
+.github/workflows/.secrets
+
+# dbt artifacts
+.user.yml
+dbt.log
+query_log.sql
+log_output/
+logs/
+
+scratch/
+
+# pre-compiled libraries (e.g. ADBC/ODBC drivers)
+*.so
+*.dylib
+*.dll
+
+# vim
+*.swp
+
+# jetbrains
+.idea/
+
+#redis
+dump.rdb
