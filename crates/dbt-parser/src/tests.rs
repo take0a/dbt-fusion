@@ -118,7 +118,6 @@ mod tests {
                 None,
                 &PathBuf::from("test"),
             )
-            .await
             .unwrap();
 
             let sql_resources_locked = sql_resources.lock().unwrap().clone();
@@ -151,9 +150,7 @@ mod tests {
             let sql = "SELECT * FROM {{ source('my_schema', 'my_table') }};";
 
             let (rendered, _) =
-                render_sql(sql, &env, resolve_model_scope, None, &PathBuf::from("test"))
-                    .await
-                    .unwrap();
+                render_sql(sql, &env, resolve_model_scope, None, &PathBuf::from("test")).unwrap();
 
             let sql_resources_locked = sql_resources.lock().unwrap().clone();
 
@@ -184,9 +181,7 @@ mod tests {
             let sql = "{{ metric('metric') }} {{ metric('metric_package', 'metric_two') }}";
 
             let (rendered, _) =
-                render_sql(sql, &env, resolve_model_scope, None, &PathBuf::from("test"))
-                    .await
-                    .unwrap();
+                render_sql(sql, &env, resolve_model_scope, None, &PathBuf::from("test")).unwrap();
 
             let sql_resources_locked = sql_resources.lock().unwrap().clone();
 
@@ -221,9 +216,7 @@ mod tests {
         }}
         "#;
             let (rendered, _) =
-                render_sql(sql, &env, resolve_model_scope, None, &PathBuf::from("test"))
-                    .await
-                    .unwrap();
+                render_sql(sql, &env, resolve_model_scope, None, &PathBuf::from("test")).unwrap();
 
             assert_eq!(rendered.trim(), "");
 
@@ -298,9 +291,8 @@ mod tests {
         {{ parsed['abc'] }}
         "#;
 
-        let (rendered, _) = render_sql(sql, &env, BTreeMap::new(), None, &PathBuf::from("test"))
-            .await
-            .unwrap();
+        let (rendered, _) =
+            render_sql(sql, &env, BTreeMap::new(), None, &PathBuf::from("test")).unwrap();
 
         assert_eq!(rendered.trim(), "123");
     }
@@ -315,9 +307,8 @@ mod tests {
         {{ json_str }}
         "#;
 
-        let (rendered, _) = render_sql(sql, &env, BTreeMap::new(), None, &PathBuf::from("test"))
-            .await
-            .unwrap();
+        let (rendered, _) =
+            render_sql(sql, &env, BTreeMap::new(), None, &PathBuf::from("test")).unwrap();
 
         let rendered = rendered.trim().replace(" ", "").replace("\n", "");
         assert_eq!(rendered, r#"{"abc":123,"def":456}"#);
@@ -333,9 +324,8 @@ mod tests {
         {{ json_str }}
         "#;
 
-        let (rendered, _) = render_sql(sql, &env, BTreeMap::new(), None, &PathBuf::from("test"))
-            .await
-            .unwrap();
+        let (rendered, _) =
+            render_sql(sql, &env, BTreeMap::new(), None, &PathBuf::from("test")).unwrap();
 
         let rendered = rendered.trim().replace(" ", "").replace("\n", "");
         assert_eq!(rendered, r#"{"abc":123,"def":456}"#);
@@ -351,9 +341,8 @@ mod tests {
         {{ json_str }}
         "#;
 
-        let (rendered, _) = render_sql(sql, &env, BTreeMap::new(), None, &PathBuf::from("test"))
-            .await
-            .unwrap();
+        let (rendered, _) =
+            render_sql(sql, &env, BTreeMap::new(), None, &PathBuf::from("test")).unwrap();
 
         assert_eq!(rendered.trim(), r#"{"default": true}"#);
     }
@@ -372,9 +361,8 @@ mod tests {
         {{ my_dict['dogs'] | join(", ") }}
         "#;
 
-        let (rendered, _) = render_sql(sql, &env, BTreeMap::new(), None, &PathBuf::from("test"))
-            .await
-            .unwrap();
+        let (rendered, _) =
+            render_sql(sql, &env, BTreeMap::new(), None, &PathBuf::from("test")).unwrap();
 
         assert_eq!(rendered.trim(), "good, bad");
     }
@@ -390,9 +378,8 @@ mod tests {
         "#;
 
         // Render the snippet
-        let (rendered, _) = render_sql(sql, &env, BTreeMap::new(), None, &PathBuf::from("test"))
-            .await
-            .unwrap();
+        let (rendered, _) =
+            render_sql(sql, &env, BTreeMap::new(), None, &PathBuf::from("test")).unwrap();
 
         let trimmed = rendered.trim().replace('\n', " ").replace('\r', "");
         assert!(trimmed.contains("abc: 123"));
@@ -409,9 +396,8 @@ mod tests {
         {{ my_set | join(", ") }}
         "#;
 
-        let (rendered, _) = render_sql(sql, &env, BTreeMap::new(), None, &PathBuf::from("test"))
-            .await
-            .unwrap();
+        let (rendered, _) =
+            render_sql(sql, &env, BTreeMap::new(), None, &PathBuf::from("test")).unwrap();
 
         let trimmed = rendered.trim();
         assert!(
@@ -435,8 +421,7 @@ mod tests {
             BTreeMap::new(),
             None,
             &PathBuf::from("test"),
-        )
-        .await;
+        );
 
         assert!(result.is_err());
     }
@@ -450,9 +435,8 @@ mod tests {
         {{ local_md5(value) }}
         "#;
 
-        let (rendered, _) = render_sql(sql, &env, BTreeMap::new(), None, &PathBuf::from("test"))
-            .await
-            .unwrap();
+        let (rendered, _) =
+            render_sql(sql, &env, BTreeMap::new(), None, &PathBuf::from("test")).unwrap();
 
         assert_eq!(rendered.trim(), "5eb63bbbe01eeed093cb22bb8f5acdc3");
     }
@@ -693,9 +677,8 @@ mod tests {
         {{ tojson(my_dict, sort_keys=true) }}
         "#;
 
-        let (rendered, _) = render_sql(sql, &env, BTreeMap::new(), None, &PathBuf::from("test"))
-            .await
-            .unwrap();
+        let (rendered, _) =
+            render_sql(sql, &env, BTreeMap::new(), None, &PathBuf::from("test")).unwrap();
 
         let rendered = rendered.trim().replace(" ", "").replace("\n", "");
         assert_eq!(rendered, r#"{"a":1,"b":2,"c":5,"d":4}"#);

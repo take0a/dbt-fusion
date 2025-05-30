@@ -1,5 +1,5 @@
 use core::fmt;
-use std::{any::Any, collections::BTreeMap, path::PathBuf, sync::Arc};
+use std::{any::Any, collections::BTreeMap, fmt::Display, path::PathBuf, sync::Arc};
 
 use dbt_common::{err, io_args::StaticAnalysisKind, ErrorCode, FsResult};
 use serde::{Deserialize, Serialize};
@@ -26,13 +26,25 @@ use super::{
     DbtSemanticModel,
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
 pub enum IntrospectionKind {
     Execute,
     UpstreamSchema,
     InternalSchema,
     ExternalSchema,
     Unknown,
+}
+
+impl Display for IntrospectionKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            IntrospectionKind::Execute => write!(f, "execute"),
+            IntrospectionKind::UpstreamSchema => write!(f, "upstream_schema"),
+            IntrospectionKind::InternalSchema => write!(f, "internal_schema"),
+            IntrospectionKind::ExternalSchema => write!(f, "external_schema"),
+            IntrospectionKind::Unknown => write!(f, "unknown"),
+        }
+    }
 }
 
 pub trait InternalDbtNode: Any + Send + Sync + fmt::Debug {
@@ -1364,12 +1376,24 @@ impl From<DbtConfig> for ManifestModelConfig {
                 require_partition_filter: config.require_partition_filter.unwrap_or(false),
                 partition_expiration_days: config.partition_expiration_days,
                 grant_access_to: config.grant_access_to,
+                partitions: config.partitions,
+                enable_refresh: config.enable_refresh,
+                refresh_interval_minutes: config.refresh_interval_minutes,
+                description: config.description,
+                max_staleness: config.max_staleness,
             },
             databricks_model_config: DatabricksModelConfig {
                 file_format: config.file_format,
                 location_root: config.location_root,
                 tblproperties: config.tblproperties,
                 include_full_name_in_path: config.include_full_name_in_path,
+                auto_liquid_cluster: config.auto_liquid_cluster,
+                liquid_clustered_by: config.liquid_clustered_by,
+                buckets: config.buckets,
+                clustered_by: config.clustered_by.clone(),
+                compression: config.compression.clone(),
+                databricks_tags: config.databricks_tags.clone(),
+                databricks_compute: config.databricks_compute.clone(),
             },
             unsafe_: config.unsafe_,
             skip_compile: config.skip_compile,

@@ -6,8 +6,8 @@ use minijinja::listener::RenderingEventListener;
 use minijinja::value::{Enumerator, Object, ObjectRepr};
 use minijinja::{Error as MinijinjaError, State, Value};
 
-use super::table::TableRepr;
-use super::{MappedSequence, Tuple, TupleRepr, ZippedTupleRepr};
+use crate::table::TableRepr;
+use crate::{MappedSequence, Tuple, TupleRepr, ZippedTupleRepr};
 
 #[derive(Debug)]
 pub(crate) struct ColumnNamesAsTuple {

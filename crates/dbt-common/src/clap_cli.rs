@@ -2503,7 +2503,7 @@ pub struct CommonArgs {
 
     /// Flag to enable or disable SQL analysis, or to run SQL in unsafe mode,  enabled by default
     #[arg(global = true, long)]
-    pub sql_analysis: Option<StaticAnalysisKind>,
+    pub static_analysis: Option<StaticAnalysisKind>,
 
     /// Flag for compile conformance
     #[arg(global = true, long, default_value = "false", action = ArgAction::SetTrue, hide= true)]

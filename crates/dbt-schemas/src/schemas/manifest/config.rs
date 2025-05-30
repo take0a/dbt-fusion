@@ -112,11 +112,25 @@ pub struct DbtConfig {
     pub partition_expiration_days: Option<u64>,
     pub grant_access_to: Option<Vec<GrantAccessToTarget>>,
     pub location: Option<String>,
+    pub partitions: Option<Vec<String>>,
+    #[serde(default, deserialize_with = "bool_or_string_bool")]
+    pub enable_refresh: Option<bool>,
+    #[serde(default, deserialize_with = "u64_or_string_u64")]
+    pub refresh_interval_minutes: Option<u64>,
+    pub description: Option<String>,
+    pub max_staleness: Option<String>,
     // below are configs for Databricks
     pub file_format: Option<String>,
     pub table_format: Option<String>,
     pub location_root: Option<String>,
     pub tblproperties: Option<BTreeMap<String, Value>>,
+    pub auto_liquid_cluster: Option<bool>,
+    pub buckets: Option<i64>,
+    pub clustered_by: Option<String>,
+    pub compression: Option<String>,
+    pub databricks_tags: Option<BTreeMap<String, Value>>,
+    pub databricks_compute: Option<String>,
+    pub liquid_clustered_by: Option<String>,
     #[serde(default, deserialize_with = "bool_or_string_bool")]
     pub include_full_name_in_path: Option<bool>,
     #[serde(default, deserialize_with = "bool_or_string_bool")]

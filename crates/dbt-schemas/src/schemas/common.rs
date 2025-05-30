@@ -398,6 +398,13 @@ pub struct DatabricksModelConfig {
     pub tblproperties: Option<BTreeMap<String, Value>>,
     // this config is introduced here https://github.com/databricks/dbt-databricks/pull/823
     pub include_full_name_in_path: Option<bool>,
+    pub liquid_clustered_by: Option<String>,
+    pub auto_liquid_cluster: Option<bool>,
+    pub clustered_by: Option<String>,
+    pub buckets: Option<i64>,
+    pub databricks_tags: Option<BTreeMap<String, Value>>,
+    pub compression: Option<String>,
+    pub databricks_compute: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq, Eq)]
@@ -730,14 +737,13 @@ pub fn normalize_quoting(
     database: &str,
     schema: &str,
     identifier: &str,
-) -> FsResult<(String, String, String, ResolvedQuoting)> {
-    let dialect = Dialect::from_str(adapter_type)
-        .map_err(|_| fs_err!(ErrorCode::InvalidArgument, "Invalid dialect"))?;
+) -> (String, String, String, ResolvedQuoting) {
+    let dialect = Dialect::from_str(adapter_type).unwrap_or_default();
     let (database, database_quoting) = _normalize_quote(quoting.database, &dialect, database);
     let (schema, schema_quoting) = _normalize_quote(quoting.schema, &dialect, schema);
     let (identifier, identifier_quoting) =
         _normalize_quote(quoting.identifier, &dialect, identifier);
-    Ok((
+    (
         database,
         schema,
         identifier,
@@ -746,13 +752,12 @@ pub fn normalize_quoting(
             schema: schema_quoting,
             identifier: identifier_quoting,
         },
-    ))
+    )
 }
 
-pub fn normalize_quote(quoting: bool, adapter_type: &str, name: &str) -> FsResult<(String, bool)> {
-    let dialect: Dialect = Dialect::from_str(adapter_type)
-        .map_err(|_| fs_err!(ErrorCode::InvalidArgument, "Invalid dialect"))?;
-    Ok(_normalize_quote(quoting, &dialect, name))
+pub fn normalize_quote(quoting: bool, adapter_type: &str, name: &str) -> (String, bool) {
+    let dialect: Dialect = Dialect::from_str(adapter_type).unwrap_or_default();
+    _normalize_quote(quoting, &dialect, name)
 }
 
 pub fn _normalize_quote(quoting: bool, dialect: &Dialect, name: &str) -> (String, bool) {
@@ -895,8 +900,7 @@ mod tests {
     ) {
         let result = normalize_quote(quoting, adapter_type, identifier);
 
-        assert!(result.is_ok());
-        let (actual_identifier, actual_quoting) = result.unwrap();
+        let (actual_identifier, actual_quoting) = result;
         assert_eq!(actual_identifier, expected_identifier);
         assert_eq!(actual_quoting, expected_quoting);
     }

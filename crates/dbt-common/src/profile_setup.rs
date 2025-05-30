@@ -33,10 +33,10 @@ impl ProfileSetup {
     pub fn get_available_adapters() -> Vec<&'static str> {
         vec![
             "snowflake",
-            "databricks (coming soon)", // TODO (Elias): Removing "coming soon" once Databricks goes live
-                                        // "bigquery", // TODO (Elias): Removing "coming soon" once BigQuery goes live
-                                        // "redshift", TODO (Elias): Add back once we have Redshift support
-                                        // "postgres", // TODO (Elias): Add back once we have Postgres support
+            "databricks", // TODO (Elias): Removing "coming soon" once Databricks goes live
+                          // "bigquery", // TODO (Elias): Removing "coming soon" once BigQuery goes live
+                          // "redshift", TODO (Elias): Add back once we have Redshift support
+                          // "postgres", // TODO (Elias): Add back once we have Postgres support
         ]
     }
 

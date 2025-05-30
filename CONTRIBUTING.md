@@ -34,3 +34,19 @@ Code can be merged into the current development branch main by opening a pull re
 Automated tests run via GitHub Actions. If you're a first-time contributor, all tests (including code checks and unit tests) will require a maintainer to approve. Changes in the dbt-fusion repository trigger integration tests against Postgres. dbt Labs also provides CI environments in which to test changes to other adapters, triggered by PRs in those adapters' repositories, as well as periodic maintenance checks of each adapter in concert with the latest dbt-fusion code changes.
 
 Once all tests are passing and your PR has been approved, a dbt-fusion maintainer will merge your changes into the active development branch. And that's it! Happy developing 🎉
+
+## Adding a CHANGELOG Entry
+
+We use [changie](https://changie.dev) to generate `CHANGELOG` entries. **Note:** Do not edit the `CHANGELOG.md` directly. Your modifications will be lost.
+
+Follow the steps to [install `changie`](https://changie.dev/guide/installation/) for your system.
+
+Once changie is installed and your PR is created for a new feature, simply run the following command and changie will walk you through the process of creating a changelog entry:
+
+```shell
+changie new
+```
+
+Commit the file that's created and your changelog entry is complete!
+
+You don't need to worry about which `dbt-fusion` version your change will go into. Just create the changelog entry with `changie`, and open your PR against the `main` branch. All merged changes will be included in the next release of `dbt-fusion`.  If a changelog is not required, a maintainer can add the label `Skip Changelog - dbt-fusion` to bypass this requirement.

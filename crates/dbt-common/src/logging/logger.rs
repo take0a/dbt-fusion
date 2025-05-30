@@ -125,6 +125,12 @@ impl Logger {
                 return false;
             }
         }
+
+        // filter based on target
+        if metadata.target().starts_with("datafusion") {
+            return false;
+        }
+
         // Reject if not in includes (when set)
         if let Some(ref includes) = self.config.includes {
             if !includes.contains(&metadata.target().to_string()) {
@@ -531,11 +537,31 @@ mod tests {
         };
 
         let logger = Logger::new("name", writer(), config, uuid::Uuid::new_v4());
-        let metadata = MetadataBuilder::new()
+        let metadata: Metadata<'_> = MetadataBuilder::new()
             .level(Level::Info)
             .target(EXECUTING)
             .build();
         assert!(logger.enabled(&metadata));
+    }
+
+    #[test]
+    fn test_logger_exclude_non_dbt_or_fs_or_sdf_target() {
+        let config = LoggerConfig {
+            level_filter: LevelFilter::Info,
+            format: LogFormat::Text,
+            min_level: None,
+            max_level: None,
+            remove_ansi_codes: true,
+            includes: None,
+            excludes: None,
+        };
+
+        let logger = Logger::new("name", writer(), config, uuid::Uuid::new_v4());
+        let metadata = MetadataBuilder::new()
+            .level(Level::Info)
+            .target("datafusion_something")
+            .build();
+        assert!(!logger.enabled(&metadata));
     }
 
     #[test]

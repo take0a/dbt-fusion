@@ -8,7 +8,7 @@ use crate::adapters::snapshots::SnapshotStrategy;
 use crate::adapters::sql_engine::{execute_query_with_retry, SqlEngine};
 use crate::adapters::AdapterType;
 use crate::adapters::{AdapterResult, AdapterTyping};
-use crate::agate::AgateTable;
+use dbt_agate::AgateTable;
 
 use arrow::array::{RecordBatch, StringArray, TimestampMillisecondArray};
 use arrow_schema::{DataType, Schema};

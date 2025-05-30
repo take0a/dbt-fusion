@@ -62,11 +62,16 @@ fn extract_model_and_version_config<T: TryBuildConfig + DeserializeOwned + std::
     jinja_env: &JinjaEnvironment<'static>,
     base_ctx: &BTreeMap<String, MinijinjaValue>,
 ) -> FsResult<(Option<T>, Option<DbtConfig>)> {
-    // Swap the schema value for Null - we are doing this so that we don't have to clone
     if !mpe.duplicate_paths.is_empty() {
         register_duplicate_resource(mpe, ref_name, "model", duplicate_errors);
         return Ok((None, None));
     }
+    // Can occur if a model asset is duplicated, but does not have duplicate property.yml definitions.
+    if mpe.schema_value.is_null() {
+        return Ok((None, None));
+    }
+
+    // Swap the schema value for Null - we are doing this so that we don't have to clone
     let schema_value = std::mem::replace(&mut mpe.schema_value, dbt_serde_yaml::Value::null());
 
     let (maybe_model, errors) =
@@ -222,7 +227,7 @@ pub async fn render_unresolved_sql_files_sequentially<
             arg.io,
             fsinfo!(PARSING.into(), display_path.display().to_string())
         );
-        match render_sql(&sql, jinja_env, resolve_model_context, None, &display_path).await {
+        match render_sql(&sql, jinja_env, resolve_model_context, None, &display_path) {
             Ok((rendered_sql_except_refs_and_sources, macro_spans)) => {
                 let sql_resources_cloned = sql_resources.clone();
 
@@ -233,7 +238,7 @@ pub async fn render_unresolved_sql_files_sequentially<
                     sql_resources_cloned
                         .lock()
                         .unwrap()
-                        .insert(0, SqlResource::Config(Box::new(root_config.clone())));
+                        .push(SqlResource::Config(Box::new(root_config.clone())));
                 }
 
                 let sql_resources_locked = sql_resources_cloned.lock().unwrap().clone();
@@ -500,8 +505,7 @@ pub async fn render_unresolved_sql_files<
                     arg.io,
                     fsinfo!(PARSING.into(), display_path.display().to_string())
                 );
-                match render_sql(&sql, &jinja_env, resolve_model_context, None, &display_path).await
-                {
+                match render_sql(&sql, &jinja_env, resolve_model_context, None, &display_path) {
                     Ok((rendered_sql_except_refs_and_sources, macro_spans)) => {
                         let sql_resources_cloned = sql_resources.clone();
 
@@ -781,8 +785,7 @@ async fn process_model_chunk_for_unsafe_detection(
             render_resolved_context,
             None,
             &display_path,
-        )
-        .await;
+        );
         if parse_adapter
             .unsafe_nodes()
             .contains(&model.common().unique_id)

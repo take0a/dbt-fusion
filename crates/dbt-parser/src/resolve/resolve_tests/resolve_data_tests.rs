@@ -17,6 +17,7 @@ use dbt_jinja_utils::jinja_environment::JinjaEnvironment;
 use dbt_schemas::project_configs::ProjectConfigs;
 use dbt_schemas::schemas::common::DbtChecksum;
 use dbt_schemas::schemas::common::DbtContract;
+use dbt_schemas::schemas::common::DbtMaterialization;
 use dbt_schemas::schemas::common::DbtQuoting;
 use dbt_schemas::schemas::common::DocsConfig;
 use dbt_schemas::schemas::common::NodeDependsOn;
@@ -159,6 +160,10 @@ pub async fn resolve_data_tests(
 
         // Errored models can be enabled, so enabled is set to the opposite of disabled
         test_config.enabled = Some(!(*status == ModelStatus::Disabled));
+
+        if test_config.materialized.is_none() {
+            test_config.materialized = Some(DbtMaterialization::View);
+        }
 
         let mut dbt_test = DbtTest {
             common_attr: CommonAttributes {

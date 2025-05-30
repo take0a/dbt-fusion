@@ -1,5 +1,5 @@
 use clap::ValueEnum;
-use dbt_serde_yaml::Value;
+use dbt_serde_yaml::{JsonSchema, Value};
 use pathdiff::diff_paths;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -477,6 +477,7 @@ pub enum Runtime {
     Display,
     Serialize,
     Deserialize,
+    JsonSchema,
 )]
 #[serde(rename_all = "lowercase")]
 #[clap(rename_all = "lowercase")]

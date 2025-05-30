@@ -17,7 +17,7 @@ use dbt_jinja_utils::{
 use dbt_schemas::{
     project_configs::ProjectConfigs,
     schemas::{
-        common::{DbtMaterialization, DbtQuoting},
+        common::DbtQuoting,
         manifest::DbtConfig,
         project::{
             DbtProject, ProjectDataTestConfig, ProjectModelConfig, ProjectSeedConfig,
@@ -391,7 +391,6 @@ pub fn init_project_config(
 ) -> FsResult<DbtProjectConfig> {
     let global_config = DbtConfig {
         enabled: Some(true),
-        materialized: Some(DbtMaterialization::View),
         // Language specific quoting
         quoting: Some(package_quoting),
         ..Default::default()

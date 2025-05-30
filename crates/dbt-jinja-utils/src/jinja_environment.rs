@@ -7,6 +7,7 @@ use minijinja::{
 };
 use serde::Serialize;
 use std::{borrow::Cow, collections::BTreeMap, rc::Rc, sync::Arc};
+use tracy_client::span;
 
 /// A struct that wraps a Minijinja Environment.
 #[derive(Clone)]
@@ -51,6 +52,7 @@ impl<'source> JinjaEnvironment<'source> {
         ctx: S,
         listener: Option<Rc<dyn RenderingEventListener>>,
     ) -> Result<(String, MacroSpans), MinijinjaError> {
+        let _span = span!("render_str");
         self.env.render_str(source, ctx, listener)
     }
 

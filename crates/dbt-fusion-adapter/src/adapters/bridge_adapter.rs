@@ -18,10 +18,10 @@ use crate::adapters::snapshots::SnapshotStrategy;
 use crate::adapters::snowflake::relation::SnowflakeRelationType;
 use crate::adapters::typed_adapter::TypedBaseAdapter;
 use crate::adapters::SqlEngine;
-use crate::agate::AgateTable;
 
 use adbc_core::error::Result as AdbcResult;
 use arrow_schema::Schema;
+use dbt_agate::AgateTable;
 use dbt_common::adapter::SchemaRegistry;
 use dbt_common::behavior_flags::{Behavior, BehaviorFlag};
 use dbt_common::current_function_name;
@@ -41,6 +41,7 @@ use minijinja::{invalid_argument, invalid_argument_inner, jinja_err, Value};
 use minijinja::{Error as MinijinjaError, ErrorKind as MinijinjaErrorKind, State};
 use serde::Deserialize;
 use tracing;
+use tracy_client::span;
 
 use std::collections::BTreeMap;
 use std::fmt;
@@ -240,6 +241,7 @@ impl BridgeAdapter {
     /// Get a guarded connection that will automatically be returned to the pool when dropped
     /// This is the preferred way to get a connection as it ensures proper cleanup
     fn get_guarded_connection(&self) -> Result<ConnectionGuard, MinijinjaError> {
+        let _span = span!("BridgeAdapter::get_guarded_connection");
         let conn = self.get_thread_local_connection()?;
         Ok(ConnectionGuard {
             conn: Some(conn),
@@ -299,6 +301,7 @@ impl BaseAdapter for BridgeAdapter {
     }
 
     fn new_connection(&self) -> Result<Box<dyn Connection>, MinijinjaError> {
+        let _span = span!("BrideAdapter::new_connection");
         let conn = self.typed_adapter.new_connection()?;
         Ok(conn)
     }

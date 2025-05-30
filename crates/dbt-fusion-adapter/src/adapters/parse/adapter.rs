@@ -11,7 +11,7 @@ use crate::adapters::response::AdapterResponse;
 use crate::adapters::typed_adapter::TypedBaseAdapter;
 use crate::adapters::utils::create_relation;
 use crate::adapters::SqlEngine;
-use crate::agate::AgateTable;
+use dbt_agate::AgateTable;
 
 use dashmap::{DashMap, DashSet};
 use dbt_common::behavior_flags::Behavior;

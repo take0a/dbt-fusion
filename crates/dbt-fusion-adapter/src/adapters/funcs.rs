@@ -2,7 +2,7 @@ use crate::adapters::base_adapter::BaseAdapter;
 use crate::adapters::errors::AdapterResult;
 use crate::adapters::errors::{AdapterError, AdapterErrorKind};
 use crate::adapters::response::ResultObject;
-use crate::agate::AgateTable;
+use dbt_agate::AgateTable;
 
 use arrow::array::RecordBatch;
 use minijinja::listener::RenderingEventListener;

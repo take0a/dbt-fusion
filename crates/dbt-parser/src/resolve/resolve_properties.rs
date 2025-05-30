@@ -71,7 +71,7 @@ impl MinimalProperties {
                         self.models.insert(
                             key,
                             MinimalPropertiesEntry {
-                                name: model.name.clone(),
+                                name: validate_resource_name(&model.name)?,
                                 relative_path: properties_path.to_path_buf(),
                                 version_info: maybe_version_info,
                                 schema_value: model_value.clone(),
@@ -132,7 +132,10 @@ impl MinimalProperties {
                             self.source_tables.insert(
                                 key,
                                 MinimalPropertiesEntry {
-                                    name: format!("{}.{}", source.name, minimum_table_value.name),
+                                    name: validate_resource_name(&format!(
+                                        "{}.{}",
+                                        source.name, minimum_table_value.name
+                                    ))?,
                                     relative_path: properties_path.to_path_buf(),
                                     schema_value: schema_value.clone(),
                                     table_value: Some(table.clone()), // Store table separately
@@ -173,7 +176,7 @@ impl MinimalProperties {
                     self.seeds.insert(
                         seed.name.clone(),
                         MinimalPropertiesEntry {
-                            name: seed.name.clone(),
+                            name: validate_resource_name(&seed.name)?,
                             relative_path: properties_path.to_path_buf(),
                             schema_value: seed_value,
                             table_value: None,
@@ -202,7 +205,7 @@ impl MinimalProperties {
                     self.snapshots.insert(
                         snapshot.name.clone(),
                         MinimalPropertiesEntry {
-                            name: snapshot.name.clone(),
+                            name: validate_resource_name(&snapshot.name)?,
                             relative_path: properties_path.to_path_buf(),
                             schema_value: snapshot_value,
                             table_value: None,
@@ -231,7 +234,7 @@ impl MinimalProperties {
                     self.unit_tests.insert(
                         unit_test.name.clone(),
                         MinimalPropertiesEntry {
-                            name: unit_test.name.clone(),
+                            name: validate_resource_name(&unit_test.name)?,
                             relative_path: properties_path.to_path_buf(),
                             schema_value: unit_test_value,
                             table_value: None,
@@ -260,7 +263,7 @@ impl MinimalProperties {
                     self.tests.insert(
                         test.name.clone(),
                         MinimalPropertiesEntry {
-                            name: test.name.clone(),
+                            name: validate_resource_name(&test.name)?,
                             relative_path: properties_path.to_path_buf(),
                             schema_value: test_value,
                             table_value: None,
@@ -289,7 +292,7 @@ impl MinimalProperties {
                     self.tests.insert(
                         test.name.clone(),
                         MinimalPropertiesEntry {
-                            name: test.name.clone(),
+                            name: validate_resource_name(&test.name)?,
                             relative_path: properties_path.to_path_buf(),
                             schema_value: test_value,
                             table_value: None,
@@ -301,6 +304,21 @@ impl MinimalProperties {
             }
         }
         Ok(())
+    }
+}
+
+fn validate_resource_name(name: &str) -> FsResult<String> {
+    // Check for the space character for now. This can be extended anytime we deprecate
+    // more of special characters like !@#%$":'
+    if name.chars().any(|c| matches!(c, ' ')) {
+        let err = fs_err!(
+            ErrorCode::SchemaError,
+            "Resource name '{}' contains forbidden characters",
+            name
+        );
+        Err(err)
+    } else {
+        Ok(name.to_string())
     }
 }
 

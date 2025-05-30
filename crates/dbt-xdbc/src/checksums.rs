@@ -11,7 +11,7 @@ pub static SORTED_CDN_DRIVER_CHECKSUMS: [(
         &str, // version
     ),
     &str, // checksum
-); 67] = [
+); 72] = [
     (
         ("bigquery", "apple-darwin", "aarch64", "0.17.0+dbt0.2.2"),
         "f8cadc3b234c750b036a40273b74a73ce8fd7a1ea08edf34fb9a51c492ac3233",
@@ -93,6 +93,10 @@ pub static SORTED_CDN_DRIVER_CHECKSUMS: [(
         "cbf84bffa0ea2a73d2e5f94d917c9547104125a1803f478fb7420f9200982a09",
     ),
     (
+        ("databricks", "apple-darwin", "aarch64", "0.18.0+dbt0.0.4"),
+        "3e21c4c8f547c99bc97751b46654cffa0a2be4d2522af8428ea02ea4b1ed6146",
+    ),
+    (
         ("databricks", "apple-darwin", "x86_64", "0.17.0+dbt0.0.1"),
         "d39bfd60c02a4fc638aa6e36b262aca32d593d16976a6f1d33b33890e0aa4f08",
     ),
@@ -105,8 +109,16 @@ pub static SORTED_CDN_DRIVER_CHECKSUMS: [(
         "ba0975bc7cb02c8a2141023df14f80ff2e358d99014342e59a7c737a467531f9",
     ),
     (
+        ("databricks", "apple-darwin", "x86_64", "0.18.0+dbt0.0.4"),
+        "bcb45c92249b6fc57a7dc98259f2d5d18016466e820f1a423212bc919316cc5b",
+    ),
+    (
         ("databricks", "manylinux_2_17-linux-gnu", "aarch64", "0.18.0+dbt0.0.3"),
         "890ab22a794423dd8dd21af9eda06661730a8fdbf8d878fa926b40d4c02dd57a",
+    ),
+    (
+        ("databricks", "manylinux_2_17-linux-gnu", "aarch64", "0.18.0+dbt0.0.4"),
+        "cc1e2112a2571c77924602829963055d1b7ae64df16bd827a177bc7ecb6cbe55",
     ),
     (
         ("databricks", "manylinux_2_17-linux-gnu", "x86_64", "0.17.0+dbt0.0.1"),
@@ -121,6 +133,10 @@ pub static SORTED_CDN_DRIVER_CHECKSUMS: [(
         "143c45989ef03f740820a92be3442f6a6d5b01f0cd403a3cbd106a1514c43c01",
     ),
     (
+        ("databricks", "manylinux_2_17-linux-gnu", "x86_64", "0.18.0+dbt0.0.4"),
+        "7fdd7616dfbbc114e0f57fa3c7abe5a2d312562678e295bdc44a5c308c7952ed",
+    ),
+    (
         ("databricks", "pc-windows-msvc", "x86_64", "0.17.0+dbt0.0.1"),
         "7865537ca805bae183614e9e011202136765ba5575a2ea658c70ba886a28df64",
     ),
@@ -131,6 +147,10 @@ pub static SORTED_CDN_DRIVER_CHECKSUMS: [(
     (
         ("databricks", "pc-windows-msvc", "x86_64", "0.18.0+dbt0.0.3"),
         "31e0842efd289a685d843093bc2f9b22d9d85df8501fbfe54ed611006a456070",
+    ),
+    (
+        ("databricks", "pc-windows-msvc", "x86_64", "0.18.0+dbt0.0.4"),
+        "934e8eef44da53431bb7bd7539a0049de83f5254e5db9567ceee327c4acb01c0",
     ),
     (
         ("postgresql", "apple-darwin", "aarch64", "0.17.0+dbt0.0.1"),

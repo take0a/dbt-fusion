@@ -23,6 +23,7 @@ use std::{
     hash::{Hash, Hasher},
     sync::atomic::{AtomicI64, Ordering},
 };
+use tracy_client::span;
 
 #[cfg(feature = "odbc")]
 use crate::connection::OdbcConnection;
@@ -213,6 +214,7 @@ impl TokenRefresher {
     }
 
     fn refreshed_auth_token(&self) -> Result<String> {
+        let _span = span!("refreshed_auth_token");
         use http::header::AUTHORIZATION;
         let result = self
             .http_agent
@@ -340,6 +342,7 @@ impl InnerAdbcDatabase {
         conn_opts: Vec<(OptionConnection, OptionValue)>,
         semaphore: Option<Arc<Semaphore>>,
     ) -> Result<Box<dyn Connection>> {
+        let span = span!("try_new_connection_with_opts_once");
         let mut db_opts = Vec::<(OptionDatabase, OptionValue)>::new();
         let mut conn_opts = conn_opts;
 
@@ -441,6 +444,7 @@ impl InnerAdbcDatabase {
             })
         }?;
         let conn = AdbcConnection(self.backend, conn, semaphore);
+        drop(span);
         Ok(Box::new(conn))
     }
 }

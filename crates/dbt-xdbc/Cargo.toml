@@ -42,6 +42,7 @@ serde = { workspace = true }
 sha2 = { workspace = true }
 siphasher = { version = "1.0.1" }
 tokio = { workspace = true }
+tracy-client = { workspace = true }
 ureq = { workspace = true }
 url = { workspace = true }
 zstd-safe = { workspace = true }

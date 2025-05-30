@@ -26,6 +26,8 @@ pub struct ProjectModelConfig {
     pub automatic_clustering: Option<bool>,
     #[serde(rename = "+auto_refresh")]
     pub auto_refresh: Option<bool>,
+    #[serde(rename = "+auto_liquid_cluster")]
+    pub auto_liquid_cluster: Option<bool>,
     #[serde(rename = "+backup")]
     pub backup: Option<bool>,
     #[serde(rename = "+base_location_root")]
@@ -38,18 +40,32 @@ pub struct ProjectModelConfig {
     pub begin: Option<String>,
     #[serde(rename = "+bind")]
     pub bind: Option<bool>,
+    #[serde(rename = "+buckets")]
+    pub buckets: Option<i64>,
     #[serde(rename = "+cluster_by")]
     pub cluster_by: Option<BigqueryClusterConfig>,
+    #[serde(rename = "+clustered_by")]
+    pub clustered_by: Option<String>,
     #[serde(rename = "+concurrent_batches")]
     pub concurrent_batches: Option<bool>,
     #[serde(rename = "+contract")]
     pub contract: Option<Contract>,
+    #[serde(rename = "+compression")]
+    pub compression: Option<String>,
     #[serde(rename = "+copy_grants")]
     pub copy_grants: Option<bool>,
     #[serde(rename = "+database")]
     pub database: Option<String>,
+    #[serde(rename = "+databricks_compute")]
+    pub databricks_compute: Option<String>,
+    #[serde(rename = "+databricks_tags")]
+    pub databricks_tags: Option<serde_json::Value>,
+    #[serde(rename = "+description")]
+    pub description: Option<String>,
     #[serde(rename = "+docs")]
     pub docs: Option<DocsConfig>,
+    #[serde(rename = "+enable_refresh")]
+    pub enable_refresh: Option<bool>,
     #[serde(rename = "+enabled")]
     pub enabled: Option<bool>,
     #[serde(rename = "+event_time")]
@@ -82,6 +98,8 @@ pub struct ProjectModelConfig {
     pub kms_key_name: Option<String>,
     #[serde(rename = "+labels")]
     pub labels: Option<serde_json::Value>,
+    #[serde(rename = "+liquid_clustered_by")]
+    pub liquid_clustered_by: Option<String>,
     #[serde(rename = "+location")]
     pub location: Option<String>,
     #[serde(rename = "+location_root")]
@@ -90,6 +108,8 @@ pub struct ProjectModelConfig {
     pub lookback: Option<f32>,
     #[serde(rename = "+materialized")]
     pub materialized: Option<String>,
+    #[serde(rename = "+max_staleness")]
+    pub max_staleness: Option<String>,
     #[serde(rename = "+merge_exclude_columns")]
     pub merge_exclude_columns: Spanned<Option<StringOrArrayOfStrings>>,
     #[serde(rename = "+merge_update_columns")]
@@ -102,6 +122,8 @@ pub struct ProjectModelConfig {
     pub on_schema_change: Option<OnSchemaChange>,
     #[serde(rename = "+partition_by")]
     pub partition_by: Option<BigqueryPartitionConfigLegacy>,
+    #[serde(rename = "+partitions")]
+    pub partitions: Option<Vec<String>>,
     #[serde(rename = "+persist_docs")]
     pub persist_docs: Option<PersistDocsConfig>,
     #[serde(rename = "+post-hook")]
@@ -116,6 +138,8 @@ pub struct ProjectModelConfig {
     pub quoting: Option<DbtQuoting>,
     #[serde(rename = "+refresh_mode")]
     pub refresh_mode: Option<String>,
+    #[serde(rename = "+refresh_interval_minutes")]
+    pub refresh_interval_minutes: Option<u64>,
     #[serde(rename = "+schema")]
     pub schema: Option<String>,
     #[serde(rename = "+secure")]
@@ -220,6 +244,13 @@ impl TryFrom<&ProjectModelConfig> for DbtConfig {
                 None => None,
             },
             model_freshness: model_configs.freshness.clone(),
+            auto_liquid_cluster: model_configs.auto_liquid_cluster,
+            buckets: model_configs.buckets,
+            clustered_by: model_configs.clustered_by.clone(),
+            compression: model_configs.compression.clone(),
+            databricks_tags: try_from_value(model_configs.databricks_tags.clone())?,
+            databricks_compute: model_configs.databricks_compute.clone(),
+            liquid_clustered_by: model_configs.liquid_clustered_by.clone(),
             ..Default::default()
         })
     }

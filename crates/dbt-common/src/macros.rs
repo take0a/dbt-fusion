@@ -359,7 +359,7 @@ macro_rules! show_warning_soon_to_be_error {
             code = err.code.to_string();
             "{} {} {}",
             YELLOW.apply_to(WARNING),
-            RED.apply_to("(soon: error)"),
+            "(will error post beta)",
             color_quotes(err.pretty().as_str())
         );
     }};
@@ -455,12 +455,12 @@ macro_rules! show_autofix_suggestion {
             $io,
             $crate::FsError::new(
                 $crate::ErrorCode::Generic,
-                "Warnings marked (soon: error) will turn into errors before leaving beta. Please fix them."
+                "Warnings marked (will error post beta) will turn into errors before leaving beta. Please fix them."
             )
         );
         $crate::_log!(
             $crate::macros::log_adapter::log::Level::Info,
-            "\n{} Try the autofix script: {}",
+            "{} Try the autofix script: {}",
             BLUE.apply_to("suggestion:"),
             BLUE.apply_to("https://github.com/dbt-labs/dbt-autofix")
         );

@@ -1,5 +1,5 @@
+use arrow::array::ArrowNativeTypeOp as _;
 use arrow::datatypes::DecimalType;
-use arrow_array::ArrowNativeTypeOp as _;
 use minijinja::value::{Object, ObjectRepr};
 use minijinja::{Error as MinijinjaError, Value};
 use std::fmt;

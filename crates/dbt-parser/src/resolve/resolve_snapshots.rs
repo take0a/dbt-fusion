@@ -209,7 +209,7 @@ pub async fn resolve_snapshots(
                     build_path: None,
                     unrendered_config: BTreeMap::new(),
                     created_at: None,
-                    raw_code: None,
+                    raw_code: Some("--placeholder--".to_string()), // TODO: This is only so that dbt-evaluator returns truthy
                     columns: properties
                         .columns
                         .as_ref()

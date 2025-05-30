@@ -14,6 +14,7 @@ use std::{
     fmt::{self, Debug, Display, Formatter},
     io,
     path::{Path, PathBuf},
+    sync::LazyLock,
 };
 
 use crate::io_utils::find_enclosed_substring;
@@ -45,14 +46,17 @@ impl Debug for FsError {
             .finish()
     }
 }
+
+static RE_ANTLR: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"^.*expecting \{(.*?)\}.*$"#).expect("valid regex"));
+
 impl Display for FsError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self.code {
             ErrorCode::SyntaxError => {
                 // Truncate and prettify Antlr syntax error messages
-                let re = Regex::new(r#"^.*expecting \{(.*?)\}.*$"#).unwrap();
                 let message = self.context.as_str();
-                let message = if let Some(caps) = re.captures(message) {
+                let message = if let Some(caps) = RE_ANTLR.captures(message) {
                     if caps.len() == 2 {
                         let original_tokens = caps[1].split(',');
                         let tokens = if original_tokens.clone().count() < MAX_DISPLAY_TOKENS {
@@ -334,13 +338,18 @@ impl FsError {
             return self.with_location(location);
         };
 
+        static RE_QUOTE: LazyLock<Regex> =
+            LazyLock::new(|| Regex::new(r"'([^']*)'").expect("valid regex"));
+        static RE_BACKTICK: LazyLock<Regex> =
+            LazyLock::new(|| Regex::new(r#"`([^`]*)`"#).expect("valid regex"));
+
         let inferred_loc = {
             let file = &location.file;
             let msg = self.to_string();
             let token = if msg.contains('\'') {
-                find_enclosed_substring(&msg, Regex::new(r"'([^']*)'").unwrap())
+                find_enclosed_substring(&msg, &RE_QUOTE)
             } else if msg.contains('`') {
-                find_enclosed_substring(&msg, Regex::new(r#"`([^`]*)`"#).unwrap())
+                find_enclosed_substring(&msg, &RE_BACKTICK)
             } else {
                 None
             };

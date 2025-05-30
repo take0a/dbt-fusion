@@ -5,7 +5,7 @@ use minijinja::{Error as MinijinjaError, ErrorKind as MinijinjaErrorKind, State}
 use std::rc::Rc;
 use std::sync::Arc;
 
-use crate::agate::AgateTable;
+use dbt_agate::AgateTable;
 
 /// Response from adapter statement execution
 #[derive(Debug, Default, Clone, PartialEq)]

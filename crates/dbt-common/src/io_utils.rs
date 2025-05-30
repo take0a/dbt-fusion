@@ -67,7 +67,7 @@ pub fn find_locations(token: &str, file: &Path) -> FsResult<Option<(usize, usize
     Ok(output)
 }
 
-pub fn find_enclosed_substring(msg: &str, re: Regex) -> Option<String> {
+pub fn find_enclosed_substring(msg: &str, re: &Regex) -> Option<String> {
     if let Some(captures) = re.captures(msg) {
         if let Some(substring) = captures.get(1) {
             return Some(substring.as_str().to_string());
@@ -194,4 +194,25 @@ pub const JSON_EXT: &str = "json";
 pub fn is_allowed_extension(input_path: &Path) -> bool {
     let extension = input_path.extension().unwrap();
     extension == SQL_EXT || extension == JSON_EXT || extension == YML_EXT
+}
+
+pub fn and_n_others(n: usize, items: &[impl ToString]) -> String {
+    if items.len() > n {
+        format!(
+            "{} and {} others",
+            items
+                .iter()
+                .take(n)
+                .map(|id| id.to_string())
+                .collect::<Vec<_>>()
+                .join(", "),
+            items.len() - n
+        )
+    } else {
+        items
+            .iter()
+            .map(|id| id.to_string())
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
 }

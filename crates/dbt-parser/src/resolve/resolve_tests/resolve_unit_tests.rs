@@ -16,6 +16,7 @@ use dbt_jinja_utils::phases::parse::sql_resource::SqlResource;
 use dbt_jinja_utils::serde::into_typed_with_jinja;
 use dbt_schemas::project_configs::ProjectConfigs;
 use dbt_schemas::schemas::common::DbtChecksum;
+use dbt_schemas::schemas::common::DbtMaterialization;
 use dbt_schemas::schemas::common::DbtQuoting;
 use dbt_schemas::schemas::common::Expect;
 use dbt_schemas::schemas::common::Given;
@@ -131,6 +132,10 @@ pub fn resolve_unit_tests(
             version: None,
             location: Some(CodeLocation::default()),
         });
+
+        if properties_config.materialized.is_none() {
+            properties_config.materialized = Some(DbtMaterialization::View);
+        }
 
         let mut dependent_sources = vec![];
         // Process unit test given inputs to extract ref nodes

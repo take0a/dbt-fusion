@@ -2,8 +2,8 @@ use core::fmt;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use super::table::TableRepr;
-use super::{MappedSequence, Tuple, TupleRepr};
+use crate::table::TableRepr;
+use crate::{MappedSequence, Tuple, TupleRepr};
 use minijinja::listener::RenderingEventListener;
 use minijinja::value::{Enumerator, Object, ObjectRepr};
 use minijinja::{Error as MinijinjaError, State, Value};

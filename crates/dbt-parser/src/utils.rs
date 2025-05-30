@@ -261,8 +261,7 @@ pub fn generate_relation_components(
         &database,
         &schema,
         &alias,
-    )
-    .expect("Failed to get semantic names");
+    );
 
     // Only generate relation_name if not ephemeral
     let relation_name = if !config

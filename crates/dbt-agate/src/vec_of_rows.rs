@@ -4,12 +4,12 @@
 
 use std::sync::Arc;
 
-use arrow_array::RecordBatch;
+use arrow::array::RecordBatch;
 use arrow_schema::{ArrowError, DataType, Field, Schema};
 use minijinja::{Error as MinijinjaError, Value};
 
-use super::converters::make_array_converter;
-use super::flat_record_batch::FlatRecordBatch;
+use crate::converters::make_array_converter;
+use crate::flat_record_batch::FlatRecordBatch;
 
 /// Internal table representation that stores rows as a vector of minijinja values.
 #[derive(Debug)]

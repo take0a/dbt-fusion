@@ -7,6 +7,7 @@
 
 use futures::stream::{FuturesUnordered, StreamExt};
 use tokio::sync::mpsc;
+use tracy_client::span;
 
 use std::ffi::c_char;
 use std::future::Future;
@@ -68,7 +69,7 @@ pub fn str_from_sqlstate(sqlstate: &[c_char; 5]) -> &str {
 pub const SNOWFLAKE_DRIVER_VERSION: &str = "0.18.0+dbt0.0.7";
 pub const BIGQUERY_DRIVER_VERSION: &str = "0.18.0+dbt0.0.3";
 pub const POSTGRES_DRIVER_VERSION: &str = "0.18.0+dbt0.0.2";
-pub const DATABRICKS_DRIVER_VERSION: &str = "0.18.0+dbt0.0.3";
+pub const DATABRICKS_DRIVER_VERSION: &str = "0.18.0+dbt0.0.4";
 
 pub use install::pre_install_driver;
 
@@ -115,6 +116,7 @@ where
 {
     #[inline(never)]
     fn new_connection(&self) -> Result<Box<dyn Connection>, E> {
+        let _span = span!("MapReduceInner::new_connection");
         let start = std::time::Instant::now();
         let res = (self.new_connection_f)();
         if res.is_ok() {
@@ -127,6 +129,7 @@ where
     }
 
     fn map(&self, conn: &'_ mut dyn Connection, key: &K) -> V {
+        let _span = span!("MapReduceInner::map");
         let start = std::time::Instant::now();
         let res = (self.map_f)(conn, key);
         let elapsed = start.elapsed();

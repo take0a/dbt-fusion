@@ -15,7 +15,7 @@ mod row;
 mod rows;
 mod table;
 
-mod flat_record_batch;
+pub(crate) mod flat_record_batch;
 mod vec_of_rows;
 
 pub use column::Column;

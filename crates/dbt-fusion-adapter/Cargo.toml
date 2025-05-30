@@ -12,8 +12,8 @@ edition.workspace = true
 [lints]
 workspace = true
 
-# NOTE: do not add more dependencies on `fs`
 [dependencies]
+dbt-agate = { workspace = true }
 dbt-common = { workspace = true }
 dbt-frontend-common = { workspace = true }
 dbt-frontend-schemas = { workspace = true }
@@ -45,8 +45,9 @@ strum = { workspace = true }
 thread_local = "1.1.8"
 tokio = { workspace = true }
 tracing = { workspace = true }
+tracy-client = { workspace = true }
 uuid = { workspace = true }
-# Test dependencies
+
 [dev-dependencies]
 chrono = { workspace = true }
 chrono-tz = { workspace = true }

@@ -63,6 +63,10 @@ impl FromStr for Dialect {
             "databricks" => Ok(Self::Databricks),
             "sdf" => Ok(Self::Sdf),
 
+            // "passthrough" adapter type is used to disable most local semantic
+            // analysis, so we just map it to the default dialect.
+            "passthrough" => Ok(Self::default()),
+
             _ => Err(format!("Invalid dialect value: '{}'", input).into()),
         }
     }

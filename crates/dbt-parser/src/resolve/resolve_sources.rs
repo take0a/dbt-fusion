@@ -151,7 +151,7 @@ pub fn resolve_sources(
             &database,
             &schema,
             &table.identifier.clone().unwrap_or(table_name.to_owned()),
-        )?;
+        );
 
         let relation_name =
             generate_relation_name(jinja_env, &database, &schema, &identifier, quoting)?;

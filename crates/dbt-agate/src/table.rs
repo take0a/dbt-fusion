@@ -1,13 +1,13 @@
-use super::column::Column;
-use super::columns::ColumnNamesAsTuple;
-use super::columns::Columns;
-use super::converters::make_array_converter;
-use super::flat_record_batch::FlatRecordBatch;
-use super::print_table::print_table;
-use super::row::Row;
-use super::rows::Rows;
-use super::vec_of_rows::VecOfRows;
-use super::Tuple;
+use crate::column::Column;
+use crate::columns::ColumnNamesAsTuple;
+use crate::columns::Columns;
+use crate::converters::make_array_converter;
+use crate::flat_record_batch::FlatRecordBatch;
+use crate::print_table::print_table;
+use crate::row::Row;
+use crate::rows::Rows;
+use crate::vec_of_rows::VecOfRows;
+use crate::Tuple;
 
 use arrow::record_batch::RecordBatch;
 use arrow_schema::{ArrowError, Schema};
@@ -424,15 +424,15 @@ impl Object for AgateTable {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::agate::*;
+    use crate::flat_record_batch::FlatRecordBatch;
+    use crate::*;
     use arrow::array::{
         ArrayRef, BooleanBuilder, Float64Builder, Int32Array, Int32Builder, ListBuilder,
         StringBuilder, StructBuilder,
     };
+    use arrow::array::{GenericListArray, StringArray};
     use arrow::datatypes::{DataType, Field, Schema};
     use arrow::record_batch::RecordBatch;
-    use arrow_array::{GenericListArray, StringArray};
     use arrow_schema::Fields;
     use std::sync::Arc;
 

@@ -19,6 +19,7 @@ use dbt_jinja_utils::jinja_environment::JinjaEnvironment;
 use dbt_jinja_utils::refs_and_sources::RefsAndSources;
 use dbt_schemas::project_configs::ProjectConfigs;
 use dbt_schemas::schemas::common::DbtContract;
+use dbt_schemas::schemas::common::DbtMaterialization;
 use dbt_schemas::schemas::common::DbtQuoting;
 use dbt_schemas::schemas::common::FreshnessRules;
 use dbt_schemas::schemas::common::NodeDependsOn;
@@ -125,6 +126,9 @@ pub async fn resolve_models(
         let ref_name = dbt_asset.path.file_stem().unwrap().to_str().unwrap();
         // Is there a better way to handle this if the model doesn't have a config?
         let mut model_config = ManifestModelConfig::from(*sql_file_info.config.clone());
+        if model_config.materialized.is_none() {
+            model_config.materialized = Some(DbtMaterialization::View);
+        }
 
         let model_name = model_properties
             .get(ref_name)
@@ -243,7 +247,7 @@ pub async fn resolve_models(
                 build_path: None,
                 contract: DbtContract::default(),
                 created_at: None,
-                raw_code: None,
+                raw_code: Some("--placeholder--".to_string()),
                 unrendered_config: BTreeMap::new(),
                 doc_blocks: None,
                 extra_ctes_injected: None,

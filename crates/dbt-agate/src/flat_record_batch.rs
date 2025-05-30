@@ -3,11 +3,11 @@
 //!
 
 use arrow::array::PrimitiveBuilder;
-use arrow::datatypes::Int64Type;
-use arrow_array::{
+use arrow::array::{
     Array, DictionaryArray, GenericListArray, OffsetSizeTrait, RecordBatch, RecordBatchOptions,
     StructArray,
 };
+use arrow::datatypes::Int64Type;
 use arrow_schema::{ArrowError, DataType, Field, Schema};
 use core::fmt;
 use std::collections::HashSet;

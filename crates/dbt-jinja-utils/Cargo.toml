@@ -13,6 +13,7 @@ edition.workspace = true
 workspace = true
 
 [dependencies]
+dbt-agate = { workspace = true }
 dbt-common = { workspace = true }
 dbt-frontend-common = { workspace = true }
 dbt-fusion-adapter = { workspace = true }
@@ -30,6 +31,7 @@ minijinja-contrib = { workspace = true }
 regex = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+tracy-client = { workspace = true }
 uuid = { workspace = true }
 
 

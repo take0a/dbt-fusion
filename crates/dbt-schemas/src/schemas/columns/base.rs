@@ -73,6 +73,7 @@ pub trait StaticBaseColumn {
         let name = args.get::<String>("name")?;
         let raw_data_type = args.get::<String>("raw_data_type")?;
 
+        // TODO why is this Snowflake specific in non-Snowflake specific trait?
         let SnowflakeColumnTypeParsed {
             data_type,
             char_size,
@@ -214,6 +215,10 @@ pub trait BaseColumn: BaseColumnProperties + Any + Send + Sync {
                 self.numeric_scale_prop(),
             ))
         } else {
+            // TODO for types such as Snowflake TIMESTAMP_LTZ(6), we should return ``format!("{}({})", dtype, precision)``.
+            //  Note that this would not be dbt core compatible behavior, but a more correct one.
+            //  Otherwise we may create/alter a table to a wrong type.
+            //  See also https://github.com/dbt-labs/fs/pull/3585#discussion_r2112390711
             self.dtype()
         }
     }
@@ -265,6 +270,7 @@ pub struct StdColumn {
     /// Postgres is 65536 (2^16 - 1)
     /// Snowflake is 16777216 (2^24)
     pub char_size: Option<u32>,
+    // TODO no need for u64; this should use 32 as char size (for consistency) or less; in some database scale can be negative
     pub numeric_precision: Option<u64>,
     pub numeric_scale: Option<u64>,
 }
@@ -309,6 +315,7 @@ pub fn string_type(size: u32) -> String {
 pub struct SnowflakeColumnTypeParsed {
     pub data_type: String,
     pub char_size: Option<u32>,
+    // TODO no need for u64; this should use 32 as char size (for consistency) or less as Snowflake precision, scale are in 0..38 range
     pub numeric_precision: Option<u64>,
     pub numeric_scale: Option<u64>,
 }
@@ -487,6 +494,19 @@ mod tests {
             let args = vec![Value::from(Kwargs::from_iter(map))];
             let result = StdColumnType::from_description(&args);
             assert!(result.is_err());
+        }
+
+        // Test Snowflake timestamp_ltz with specific precision
+        {
+            let args = vec![Value::from("COL_NAME"), Value::from("TIMESTAMP_LTZ(6)")];
+            let actual = StdColumnType::from_description(&args).unwrap();
+            let expected = Value::from_object(StdColumn {
+                name: "COL_NAME".to_string(),
+                dtype: "TIMESTAMP_LTZ".to_string(),
+                char_size: Some(6),
+                ..Default::default()
+            });
+            assert_eq!(expected, actual);
         }
     }
 }

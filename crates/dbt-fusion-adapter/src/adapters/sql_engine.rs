@@ -10,6 +10,7 @@ use dbt_common::constants::EXECUTING;
 use dbt_xdbc::{connection, database, driver, Connection, Database, QueryCtx, Semaphore};
 use log;
 use serde_json::json;
+use tracy_client::span;
 
 use std::collections::HashMap;
 use std::fmt::Write;
@@ -182,11 +183,13 @@ impl SqlEngine {
         &self,
         config: &AdapterConfig,
     ) -> AdapterResult<Box<dyn Connection>> {
-        match &self {
+        let _span = span!("ActualEngine::new_connection");
+        let conn = match &self {
             Self::Warehouse(actual_engine) => actual_engine.new_connection_with_config(config),
             Self::Record(record_engine) => record_engine.new_connection(),
             Self::Replay(replay_engine) => replay_engine.new_connection(),
-        }
+        }?;
+        Ok(conn)
     }
 
     /// Create a new connection to the warehouse.
@@ -216,6 +219,7 @@ impl SqlEngine {
             let batches: Vec<RecordBatch> = reader.by_ref().collect::<Result<_, _>>()?;
             Ok((schema, batches))
         };
+        let _span = span!("SqlEngine::execute");
         let (schema, batches) = do_execute(conn)?;
         let total_batch = concat_batches(&schema, &batches)?;
         Ok(total_batch)

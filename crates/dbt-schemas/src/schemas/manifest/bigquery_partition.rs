@@ -23,6 +23,11 @@ pub struct BigQueryModelConfig {
     pub require_partition_filter: bool,
     pub partition_expiration_days: Option<u64>,
     pub grant_access_to: Option<Vec<GrantAccessToTarget>>,
+    pub partitions: Option<Vec<String>>,
+    pub enable_refresh: Option<bool>,
+    pub refresh_interval_minutes: Option<u64>,
+    pub description: Option<String>,
+    pub max_staleness: Option<String>,
 }
 
 /// dbt-core allows either of the variants for the `partition_by` in the model config

@@ -270,9 +270,10 @@ pub fn pretty_progress_censured(action: &str, target: &str, censored: &str) -> (
     )
 }
 
+static RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\x1b\[[0-9;]*m").expect("valid regex"));
+
 pub fn remove_ansi_codes(input: &str) -> String {
-    let re = Regex::new(r"\x1b\[[0-9;]*m").unwrap();
-    re.replace_all(input, "").to_string()
+    RE.replace_all(input, "").to_string()
 }
 
 pub fn make_title(title: &str, description: &str) -> String {

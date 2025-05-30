@@ -17,6 +17,7 @@ use crate::schemas::serde::try_from_value;
 use crate::schemas::serde::try_string_to_type;
 use crate::schemas::serde::FloatOrString;
 use crate::schemas::serde::StringOrArrayOfStrings;
+use dbt_common::io_args::StaticAnalysisKind;
 use dbt_serde_yaml::JsonSchema;
 use dbt_serde_yaml::Verbatim;
 use serde::{Deserialize, Serialize};
@@ -63,6 +64,7 @@ impl ModelProperties {
 pub struct ModelPropertiesConfigs {
     pub access: Option<Access>,
     pub alias: Option<String>,
+    pub auto_liquid_cluster: Option<bool>,
     pub auto_refresh: Option<bool>,
     pub automatic_clustering: Option<bool>,
     pub backup: Option<bool>,
@@ -70,12 +72,19 @@ pub struct ModelPropertiesConfigs {
     pub base_location_subpath: Option<String>,
     pub batch_size: Option<String>,
     pub begin: Option<String>,
+    pub buckets: Option<i64>,
     pub cluster_by: Option<BigqueryClusterConfig>,
+    pub clustered_by: Option<String>,
+    pub compression: Option<String>,
     pub concurrent_batches: Option<bool>,
     pub contract: Option<DbtContract>,
     pub copy_grants: Option<bool>,
     pub database: Option<String>,
+    pub databricks_tags: Option<serde_json::Value>,
+    pub databricks_compute: Option<String>,
+    pub description: Option<String>,
     pub docs: Option<DocsConfig>,
+    pub enable_refresh: Option<bool>,
     pub enabled: Option<bool>,
     pub event_time: Option<String>,
     pub external_volume: Option<String>,
@@ -91,18 +100,22 @@ pub struct ModelPropertiesConfigs {
     pub initialize: Option<String>,
     pub kms_key_name: Option<String>,
     pub labels: Option<serde_json::Value>,
+    pub liquid_clustered_by: Option<String>,
     pub location: Option<String>,
     pub location_root: Option<String>,
     pub lookback: Option<f32>,
     pub materialized: Option<String>,
+    pub max_staleness: Option<String>,
     pub meta: Option<serde_json::Value>,
     pub on_configuration_change: Option<String>,
     pub on_schema_change: Option<String>,
     pub partition_by: Option<BigqueryPartitionConfigLegacy>,
+    pub partitions: Option<Vec<String>>,
     pub persist_docs: Option<PersistDocsConfig>,
     pub post_hook: Verbatim<Option<Hooks>>,
     pub pre_hook: Verbatim<Option<Hooks>>,
     pub refresh_mode: Option<String>,
+    pub refresh_interval_minutes: Option<u64>,
     pub schema: Option<String>,
     pub secure: Option<bool>,
     pub snowflake_warehouse: Option<String>,
@@ -114,6 +127,7 @@ pub struct ModelPropertiesConfigs {
     pub tmp_relation_type: Option<String>,
     pub unique_key: Option<StringOrArrayOfStrings>,
     pub query_tag: Option<String>,
+    pub static_analysis: Option<StaticAnalysisKind>,
 }
 
 #[skip_serializing_none]
@@ -142,6 +156,7 @@ impl TryFrom<&ModelPropertiesConfigs> for DbtConfig {
         Ok(DbtConfig {
             access: config.access.clone(),
             alias: config.alias.clone(),
+            auto_liquid_cluster: config.auto_liquid_cluster,
             auto_refresh: config.auto_refresh,
             automatic_clustering: config.automatic_clustering,
             backup: config.backup,
@@ -149,7 +164,10 @@ impl TryFrom<&ModelPropertiesConfigs> for DbtConfig {
             base_location_subpath: config.base_location_subpath.clone(),
             batch_size: try_string_to_type(&config.batch_size)?,
             begin: config.begin.clone(),
+            buckets: config.buckets,
             cluster_by: config.cluster_by.clone(),
+            clustered_by: config.clustered_by.clone(),
+            compression: config.compression.clone(),
             concurrent_batches: config.concurrent_batches,
             contract: config.contract.clone(),
             copy_grants: config.copy_grants,
@@ -198,6 +216,7 @@ impl TryFrom<&ModelPropertiesConfigs> for DbtConfig {
             post_hook: (*config.post_hook).clone(),
             pre_hook: (*config.pre_hook).clone(),
             model_freshness: config.freshness.clone(),
+            static_analysis: config.static_analysis,
             ..Default::default()
         })
     }

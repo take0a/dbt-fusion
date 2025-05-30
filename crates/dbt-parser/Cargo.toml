@@ -26,7 +26,7 @@ chrono = { workspace = true }
 chrono-tz = { workspace = true }
 dbt-serde_yaml = { workspace = true }
 itertools = { workspace = true }
-minijinja = { workspace = true, features = ["unstable_machinery"] }
+minijinja = { workspace = true }
 minijinja-contrib = { workspace = true, features = [
   "pycompat",
   "datetime",

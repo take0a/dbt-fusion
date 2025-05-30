@@ -128,6 +128,12 @@ pub fn read_profiles_and_extract_db_config(
         Some(&maybe_relative_profile_path),
     )?;
     let dbt_profiles = dbt_serde_yaml::from_value::<DbtProfilesIntermediate>(prepared_profile_val)?;
+    if dbt_profiles.config.is_some() {
+        return err!(
+            ErrorCode::InvalidConfig,
+            "Unexpected 'config' key in dbt profiles.yml"
+        );
+    }
     let profile_val = dbt_profiles.profiles.get(profile_str).ok_or(fs_err!(
         ErrorCode::IoError,
         "Profile '{}' not found in dbt profiles.yml",

@@ -55,7 +55,7 @@
 //!  `minijinja::Value`, serialize them to a `yaml::Value` *first*, then
 //!  serialize the `yaml::Value` to the target format.
 
-use std::{path::Path, rc::Rc};
+use std::{path::Path, rc::Rc, sync::LazyLock};
 
 use dbt_common::{
     fs_err, io_args::IoArgs, show_warning, show_warning_soon_to_be_error, stdfs, ErrorCode,
@@ -322,6 +322,10 @@ where
 {
     into_typed_raw(io_args, value_from_str(io_args, input, error_display_path)?)
 }
+
+static RE_SIMPLE_EXPR: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^\s*\{\{\s*[^{}]+\s*\}\}\s*$").expect("valid regex"));
+
 /// Check if the input is a single Jinja expression without whitespace control
 pub fn check_single_expression_without_whitepsace_control(input: &str) -> bool {
     // The regex matches:
@@ -336,10 +340,7 @@ pub fn check_single_expression_without_whitepsace_control(input: &str) -> bool {
         && !input.ends_with("-}}")
         && input.starts_with("{{")
         && input.ends_with("}}")
-        && {
-            let re = Regex::new(r"^\s*\{\{\s*[^{}]+\s*\}\}\s*$").unwrap();
-            re.is_match(input)
-        }
+        && { RE_SIMPLE_EXPR.is_match(input) }
 }
 
 #[cfg(test)]

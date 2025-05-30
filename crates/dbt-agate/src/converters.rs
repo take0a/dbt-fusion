@@ -10,15 +10,19 @@ use arrow::util::display::FormatOptions;
 use arrow_array::{Array, ArrowPrimitiveType, BooleanArray, GenericByteArray, OffsetSizeTrait};
 use arrow_buffer::i256;
 use arrow_schema::ArrowError;
+use chrono::{NaiveDate, NaiveTime};
 use minijinja::Value;
+use minijinja_contrib::modules::py_datetime::date::PyDate;
+use minijinja_contrib::modules::py_datetime::time::PyTime;
 
-use super::decimal::DecimalValue;
+use crate::decimal::DecimalValue;
 
 /// Converts the i-th element of an Arrow array to a minijinja Value.
 pub trait ArrayConverter {
     fn to_value(&self, idx: usize) -> Value;
 }
 
+// Boolean, Integers, and Floats {{{
 struct BooleanArrayConverter {
     values: BooleanBuffer,
     nulls: Option<NullBuffer>,
@@ -92,7 +96,9 @@ make_primitive_array_converter!(UInt32Type);
 make_primitive_array_converter!(UInt64Type);
 make_primitive_array_converter!(Float32Type);
 make_primitive_array_converter!(Float64Type);
+// }}}
 
+// Decimals {{{
 struct DecimalArrayConverter<T: DecimalType> {
     values: ScalarBuffer<T::Native>,
     nulls: Option<NullBuffer>,
@@ -169,7 +175,158 @@ where
         }
     }
 }
+// }}}
 
+// Date and Time {{{
+/// Number of days between 0001-01-01 and 1970-01-01
+const EPOCH_DAYS_FROM_CE: i32 = 719_163;
+/// Number of milliseconds in a day
+const NUM_MILLIS_PER_DAY: i64 = 86_400_000; // 24 * 60 * 60 * 1000
+
+impl ArrayConverter for PrimitiveArrayConverter<Date32Type> {
+    fn to_value(&self, idx: usize) -> Value {
+        if self.is_valid(idx) {
+            let num_days_from_epoch = self.values[idx];
+            let num_days_from_ce = num_days_from_epoch + EPOCH_DAYS_FROM_CE;
+            let naive_date_opt = NaiveDate::from_num_days_from_ce_opt(num_days_from_ce);
+            debug_assert!(
+                naive_date_opt.is_some(),
+                "out-of-range date32 value: {}",
+                num_days_from_epoch
+            );
+            match naive_date_opt {
+                Some(naive_date) => Value::from_object(PyDate::new(naive_date)),
+                None => {
+                    // Handle out-of-range dates gracefully, but out-of-range
+                    // date32 value is most likely a bug somewhere, hence the
+                    // debug_assert above.
+                    Value::from(())
+                }
+            }
+        } else {
+            Value::from(())
+        }
+    }
+}
+
+impl ArrayConverter for PrimitiveArrayConverter<Date64Type> {
+    fn to_value(&self, idx: usize) -> Value {
+        if self.is_valid(idx) {
+            let num_millis_from_epoch = self.values[idx];
+            let num_days_from_epoch = num_millis_from_epoch / NUM_MILLIS_PER_DAY;
+            let num_days_from_ce = num_days_from_epoch as i32 + EPOCH_DAYS_FROM_CE;
+            let naive_date_opt = NaiveDate::from_num_days_from_ce_opt(num_days_from_ce);
+            debug_assert!(
+                naive_date_opt.is_some(),
+                "out-of-range date64 value: {}",
+                num_millis_from_epoch
+            );
+            match naive_date_opt {
+                Some(naive_date) => Value::from_object(PyDate::new(naive_date)),
+                None => Value::from(()),
+            }
+        } else {
+            Value::from(())
+        }
+    }
+}
+
+impl ArrayConverter for PrimitiveArrayConverter<Time32SecondType> {
+    fn to_value(&self, idx: usize) -> Value {
+        if self.is_valid(idx) {
+            let naive_time_opt = u32::try_from(self.values[idx]).ok().and_then(|seconds| {
+                let naive_time_opt = NaiveTime::from_num_seconds_from_midnight_opt(seconds, 0);
+                debug_assert!(
+                    naive_time_opt.is_some(),
+                    "out-of-range time32 (seconds) value: {}",
+                    seconds
+                );
+                naive_time_opt
+            });
+            match naive_time_opt {
+                Some(naive_time) => Value::from_object(PyTime::new(naive_time, None)),
+                None => Value::from(()),
+            }
+        } else {
+            Value::from(())
+        }
+    }
+}
+
+impl ArrayConverter for PrimitiveArrayConverter<Time32MillisecondType> {
+    fn to_value(&self, idx: usize) -> Value {
+        if self.is_valid(idx) {
+            let naive_time_opt = u32::try_from(self.values[idx]).ok().and_then(|millis| {
+                let secs = millis / 1000;
+                let nano = (millis % 1000) * 1_000_000;
+                let naive_time_opt = NaiveTime::from_num_seconds_from_midnight_opt(secs, nano);
+                debug_assert!(
+                    naive_time_opt.is_some(),
+                    "out-of-range time32 (milliseconds) value: {}",
+                    millis
+                );
+                naive_time_opt
+            });
+            match naive_time_opt {
+                Some(naive_time) => Value::from_object(PyTime::new(naive_time, None)),
+                None => Value::from(()),
+            }
+        } else {
+            Value::from(())
+        }
+    }
+}
+
+impl ArrayConverter for PrimitiveArrayConverter<Time64MicrosecondType> {
+    fn to_value(&self, idx: usize) -> Value {
+        if self.is_valid(idx) {
+            let naive_time_opt = u64::try_from(self.values[idx]).ok().and_then(|micros| {
+                let secs = (micros / 1_000_000) as u32;
+                let nano = ((micros % 1_000_000) * 1_000) as u32;
+                let naive_time_opt = NaiveTime::from_num_seconds_from_midnight_opt(secs, nano);
+                debug_assert!(
+                    naive_time_opt.is_some(),
+                    "out-of-range time64 (microseconds) value: {}",
+                    micros
+                );
+                naive_time_opt
+            });
+            match naive_time_opt {
+                Some(naive_time) => Value::from_object(PyTime::new(naive_time, None)),
+                None => Value::from(()),
+            }
+        } else {
+            Value::from(())
+        }
+    }
+}
+
+impl ArrayConverter for PrimitiveArrayConverter<Time64NanosecondType> {
+    fn to_value(&self, idx: usize) -> Value {
+        if self.is_valid(idx) {
+            let naive_time_opt = u64::try_from(self.values[idx]).ok().and_then(|nanos| {
+                let secs = (nanos / 1_000_000_000) as u32;
+                let nano_frac = (nanos % 1_000_000_000) as u32;
+                let naive_time_opt = NaiveTime::from_num_seconds_from_midnight_opt(secs, nano_frac);
+                debug_assert!(
+                    naive_time_opt.is_some(),
+                    "out-of-range time64 (nanoseconds) value: {}",
+                    nanos
+                );
+                naive_time_opt
+            });
+            match naive_time_opt {
+                Some(naive_time) => Value::from_object(PyTime::new(naive_time, None)),
+                None => Value::from(()),
+            }
+        } else {
+            Value::from(())
+        }
+    }
+}
+// }}}
+
+// String and Binary {{{
 struct GenericByteArrayConverter<T: ByteArrayType> {
     array: GenericByteArray<T>,
 }
@@ -211,6 +368,7 @@ type StringArrayConverter = GenericStringArrayConverter<i32>;
 type GenericBinaryArrayConverter<O> = GenericByteArrayConverter<GenericBinaryType<O>>;
 type BinaryArrayConverter = GenericBinaryArrayConverter<i32>;
 // type LargeBinaryArrayConverter = GenericBinaryArrayConverter<i64>;
+// }}}
 
 pub fn make_array_converter(array: &dyn Array) -> Result<Box<dyn ArrayConverter>, ArrowError> {
     let converter: Box<dyn ArrayConverter> = match array.data_type() {
@@ -253,6 +411,32 @@ pub fn make_array_converter(array: &dyn Array) -> Result<Box<dyn ArrayConverter>
         )),
         DataType::Utf8 => Box::new(StringArrayConverter::new(array.as_string())),
         DataType::Binary => Box::new(BinaryArrayConverter::new(array.as_binary())),
+        DataType::Date32 => Box::new(PrimitiveArrayConverter::<Date32Type>::new(
+            array.as_primitive::<Date32Type>(),
+        )),
+        DataType::Date64 => Box::new(PrimitiveArrayConverter::<Date64Type>::new(
+            array.as_primitive::<Date64Type>(),
+        )),
+        DataType::Time32(TimeUnit::Second) => {
+            Box::new(PrimitiveArrayConverter::<Time32SecondType>::new(
+                array.as_primitive::<Time32SecondType>(),
+            ))
+        }
+        DataType::Time32(TimeUnit::Millisecond) => {
+            Box::new(PrimitiveArrayConverter::<Time32MillisecondType>::new(
+                array.as_primitive::<Time32MillisecondType>(),
+            ))
+        }
+        DataType::Time64(TimeUnit::Microsecond) => {
+            Box::new(PrimitiveArrayConverter::<Time64MicrosecondType>::new(
+                array.as_primitive::<Time64MicrosecondType>(),
+            ))
+        }
+        DataType::Time64(TimeUnit::Nanosecond) => {
+            Box::new(PrimitiveArrayConverter::<Time64NanosecondType>::new(
+                array.as_primitive::<Time64NanosecondType>(),
+            ))
+        }
         // TODO: extends type support (e.g. date and time types)
         _ => {
             // FALLBACK: Turn every Arrow value into a [minijinja::Value] string.
@@ -271,11 +455,18 @@ pub fn make_array_converter(array: &dyn Array) -> Result<Box<dyn ArrayConverter>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use arrow::array::{ArrayData, ArrayRef, Decimal128Array, Int32Array, Int64Array};
-    use arrow_array::{Decimal256Array, Float64Array, StringArray, UInt64Array};
+    use arrow::compute::kernels::cast_utils::Parser as _;
+    use arrow_array::{
+        ArrayRef, Date32Array, Date64Array, Decimal128Array, Decimal256Array, Float64Array,
+        Int32Array, Int64Array, StringArray, Time32MillisecondArray, Time32SecondArray,
+        Time64MicrosecondArray, Time64NanosecondArray, UInt64Array,
+    };
     use arrow_buffer::Buffer;
     use arrow_data::decimal::MAX_DECIMAL128_FOR_EACH_PRECISION;
+    use arrow_data::ArrayData;
+    use minijinja::listener::DefaultRenderingEventListener;
     use minijinja::Value;
+    use std::rc::Rc;
     use std::sync::Arc;
 
     const MAX_DECIMAL128: i128 = MAX_DECIMAL128_FOR_EACH_PRECISION[38];
@@ -451,5 +642,127 @@ mod tests {
             result,
             vec![Value::from("Hello"), Value::from("World"), Value::from(())]
         );
+    }
+
+    macro_rules! test_date {
+        ($date_type:ty, $array_type:ty) => {
+            // Input Arrow array with date32/64 values
+            let array = {
+                let date0 = <$date_type>::parse("2025-05-28").unwrap();
+                let date1 = <$date_type>::parse("2025-05-29").unwrap();
+                <$array_type>::from(vec![Some(date0), Some(date1), None])
+            };
+            // Expected output minijinja values
+            let date0 =
+                Value::from_object(PyDate::new(NaiveDate::from_ymd_opt(2025, 5, 28).unwrap()));
+            let date1 =
+                Value::from_object(PyDate::new(NaiveDate::from_ymd_opt(2025, 5, 29).unwrap()));
+            assert_eq!(date0.to_string(), "2025-05-28");
+            assert_eq!(date1.to_string(), "2025-05-29");
+
+            // Convert Arrow array to minijinja values and assert the result.
+            let result = arrow_to_values(&array).unwrap();
+            assert_eq!(result, vec![date0, date1, Value::from(())]);
+
+            // Ensure strftime can be called on the values.
+            let env = minijinja::Environment::new();
+            let state = env.empty_state();
+
+            let date0 = &result[0];
+            let date1 = &result[1];
+
+            let res0 = date0.call_method(
+                &state,
+                "strftime",
+                &[Value::from("%Y/%m/%d")],
+                Rc::new(DefaultRenderingEventListener),
+            );
+            assert_eq!(res0.unwrap().to_string(), "2025/05/28");
+
+            let res1 = date1.call_method(
+                &state,
+                "strftime",
+                &[Value::from("%Y/%m/%d")],
+                Rc::new(DefaultRenderingEventListener),
+            );
+            assert_eq!(res1.unwrap().to_string(), "2025/05/29");
+        };
+    }
+
+    #[test]
+    fn test_date32_values() {
+        test_date!(Date32Type, Date32Array);
+    }
+
+    #[test]
+    fn test_date64_values() {
+        test_date!(Date64Type, Date64Array);
+    }
+
+    macro_rules! test_time {
+        ($time_type:ty, $array_type:ty) => {
+            // Input Arrow array with time32/64 values
+            let array = {
+                let time0 = <$time_type>::parse("13:37:00").unwrap();
+                let time1 = <$time_type>::parse("23:59:59").unwrap();
+                <$array_type>::from(vec![Some(time0), Some(time1), None])
+            };
+            // Expected output minijinja values
+            let time0 = Value::from_object(PyTime::new(
+                NaiveTime::from_hms_opt(13, 37, 0).unwrap(),
+                None,
+            ));
+            let time1 = Value::from_object(PyTime::new(
+                NaiveTime::from_hms_opt(23, 59, 59).unwrap(),
+                None,
+            ));
+
+            // Convert Arrow array to minijinja values and assert the result.
+            let result = arrow_to_values(&array).unwrap();
+            assert_eq!(result, vec![time0, time1, Value::from(())]);
+
+            // Ensure strftime can be called on the values.
+            let env = minijinja::Environment::new();
+            let state = env.empty_state();
+
+            let time0 = &result[0];
+            let time1 = &result[1];
+
+            let res0 = time0.call_method(
+                &state,
+                "strftime",
+                &[Value::from("h=%H, m=%M, s=%S")],
+                Rc::new(DefaultRenderingEventListener),
+            );
+            assert_eq!(res0.unwrap().to_string(), "h=13, m=37, s=00");
+
+            let res1 = time1.call_method(
+                &state,
+                "strftime",
+                &[Value::from("h=%H, m=%M, s=%S")],
+                Rc::new(DefaultRenderingEventListener),
+            );
+            assert_eq!(res1.unwrap().to_string(), "h=23, m=59, s=59");
+        };
+    }
+
+    #[test]
+    fn test_time32_seconds_values() {
+        test_time!(Time32SecondType, Time32SecondArray);
+    }
+
+    #[test]
+    fn test_time32_milliseconds_values() {
+        test_time!(Time32MillisecondType, Time32MillisecondArray);
+    }
+
+    #[test]
+    fn test_time64_microseconds_values() {
+        test_time!(Time64MicrosecondType, Time64MicrosecondArray);
+    }
+
+    #[test]
+    fn test_time64_nanoseconds_values() {
+        test_time!(Time64NanosecondType, Time64NanosecondArray);
     }
 }

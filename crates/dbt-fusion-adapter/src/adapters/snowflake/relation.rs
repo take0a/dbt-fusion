@@ -1,4 +1,3 @@
-use arrow::array::RecordBatch;
 use dbt_adapter_proc_macros::{BaseRelationObject, StaticBaseRelationObject};
 use dbt_common::current_function_name;
 use dbt_schemas::dbt_types::RelationType;
@@ -33,7 +32,6 @@ impl StaticBaseRelation for SnowflakeRelationType {
             schema,
             identifier,
             relation_type,
-            None,
             TableFormat::Default,
             custom_quoting,
         )))
@@ -67,9 +65,6 @@ pub struct SnowflakeRelation {
     pub path: RelationPath,
     /// The relation type (default: None)
     pub relation_type: Option<RelationType>,
-    /// The actual schema of the relation we got from Snowflake
-    #[allow(dead_code)]
-    pub arrow_schema: Option<RecordBatch>,
     /// The table format of the relation
     pub table_format: TableFormat,
     /// Include policy
@@ -99,7 +94,6 @@ impl SnowflakeRelation {
         schema: Option<String>,
         identifier: Option<String>,
         relation_type: Option<RelationType>,
-        arrow_schema: Option<RecordBatch>,
         table_format: TableFormat,
         custom_quoting: ResolvedQuoting,
     ) -> Self {
@@ -110,7 +104,6 @@ impl SnowflakeRelation {
                 identifier,
             },
             relation_type,
-            arrow_schema,
             table_format,
             include_policy: Policy::enabled(),
             // https://github.com/dbt-labs/dbt-core/blob/main/env/lib/python3.12/site-packages/dbt/adapters/snowflake/relation_configs/policies.py#L22
@@ -338,7 +331,6 @@ impl BaseRelation for SnowflakeRelation {
             Some(schema),
             identifier,
             relation_type,
-            None,
             TableFormat::Default,
             custom_quoting,
         )))

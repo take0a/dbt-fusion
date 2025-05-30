@@ -10,7 +10,7 @@ use dbt_jinja_utils::jinja_environment::JinjaEnvironment;
 use dbt_jinja_utils::refs_and_sources::RefsAndSources;
 use dbt_jinja_utils::serde::into_typed_with_jinja;
 use dbt_schemas::project_configs::ProjectConfigs;
-use dbt_schemas::schemas::common::{DbtChecksum, DbtQuoting, NodeDependsOn};
+use dbt_schemas::schemas::common::{DbtChecksum, DbtMaterialization, DbtQuoting, NodeDependsOn};
 use dbt_schemas::schemas::dbt_column::process_columns;
 use dbt_schemas::schemas::manifest::{CommonAttributes, DbtConfig, DbtSeed, NodeBaseAttributes};
 use dbt_schemas::schemas::project::DbtProject;
@@ -146,6 +146,9 @@ pub fn resolve_seeds(
         let is_enabled = properties_config.is_enabled();
 
         let columns = process_columns(seed.columns.as_ref(), &properties_config)?;
+        if properties_config.materialized.is_none() {
+            properties_config.materialized = Some(DbtMaterialization::Table);
+        }
 
         // Create initial seed with default values
         let mut dbt_seed = DbtSeed {

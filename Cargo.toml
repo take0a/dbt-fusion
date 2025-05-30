@@ -3,6 +3,7 @@
 members = [
 
   # Source Available
+  "crates/dbt-agate",
   "crates/dbt-common",
   "crates/dbt-frontend-common",
   "crates/dbt-frontend-schemas",
@@ -35,7 +36,7 @@ homepage = "https://getdbt.com"
 keywords = ["sql", "parquet", "json", "csv", "dbt"]
 license = "<>"
 repository = "https://github.com/dbt-labs/dbt-fusion"
-version = "2.0.0-beta.5"
+version = "2.0.0-beta.12"
 
 # We currently need a fork of apache/arrow-datafusion with a few patches.
 # However, note that we declare dependencies in our crates with the same version
@@ -122,6 +123,7 @@ opt-level = 3
 
 # fs source available dependencies
 dbt-adapter-proc-macros = { path = "crates/dbt-adapter-proc-macros" }
+dbt-agate = { path = "crates/dbt-agate" }
 dbt-common = { path = "crates/dbt-common" }
 dbt-dag = { path = "crates/dbt-dag" }
 dbt-deps = { path = "crates/dbt-deps" }
@@ -342,9 +344,14 @@ anyhow = { version = "1.0.74" }
 # logging
 log = { version = "0.4.27", features = ["kv_serde"] }
 
-# tracing
+# tracing (observability)
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "json"] }
+
+# tracing (local profiling)
+# Compile with --features "tracy-client/enable" to enable integration with the
+# Tracy profiler: https://github.com/wolfpld/tracy
+tracy-client = { version = "0.18.0", default-features = false }
 
 [workspace.lints.rust]
 # When updating these lints mind that some crates may not inherit form workspace

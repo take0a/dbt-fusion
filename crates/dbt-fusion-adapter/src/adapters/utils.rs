@@ -37,7 +37,6 @@ pub fn create_relation(
             Some(schema),
             identifier,
             relation_type,
-            None,
             TableFormat::Default,
             custom_quoting,
         )) as Arc<dyn BaseRelation>,

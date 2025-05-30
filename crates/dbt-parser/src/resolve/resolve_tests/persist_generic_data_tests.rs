@@ -21,6 +21,7 @@ use std::hash::Hash;
 use std::hash::Hasher;
 use std::path::Path;
 use std::path::PathBuf;
+use std::sync::LazyLock;
 
 const CONFIG_ARGS: &[&str] = &[
     "severity",
@@ -317,6 +318,9 @@ fn parse_test_name_and_namespace(test_name: &str) -> (String, Option<String>) {
     }
 }
 
+static CLEAN_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"[^0-9a-zA-Z_]+").expect("valid regex"));
+
 //https://github.com/dbt-labs/dbt-core/blob/31881d2a3bea030e700e9df126a3445298385698/core/dbt/parser/generic_test_builders.py#L26
 /// Generates a test name and alias for a generic test.
 ///
@@ -361,11 +365,10 @@ fn generate_test_name(
     }
 
     // Clean args to only allow alphanumeric and underscore
-    let clean_regex = Regex::new(r"[^0-9a-zA-Z_]+").unwrap();
     let mut clean_flat_args: Vec<String> = flat_args
         .iter()
         .map(|arg| {
-            clean_regex
+            CLEAN_REGEX
                 .replace_all(arg, "_")
                 .trim_matches('_')
                 .to_string()
@@ -416,7 +419,7 @@ fn generate_test_name(
         let mut hasher = DefaultHasher::new();
         result.as_str().hash(&mut hasher);
         let hash = hasher.finish();
-        hash.to_string()
+        format!("t_{:X}", hash) // Uppercase hex format is alphanumeric
     } else {
         result
     }

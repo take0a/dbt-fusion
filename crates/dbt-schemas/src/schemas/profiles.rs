@@ -23,9 +23,8 @@ pub struct DbtProfilesIntermediate {
     pub profiles: HashMap<ProfileName, dbt_serde_yaml::Value>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, JsonSchema)]
+#[derive(Debug, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct DbtProfiles {
-    pub config: Option<serde_json::Value>,
     #[serde(flatten)]
     pub profiles: HashMap<ProfileName, DbConfig>,
 }

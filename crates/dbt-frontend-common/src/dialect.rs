@@ -76,6 +76,11 @@ impl FromStr for Dialect {
             "spark-lp" => Ok(Dialect::SparkLp),
             "redshift" => Ok(Dialect::Redshift),
             "databricks" => Ok(Dialect::Databricks),
+
+            // "passthrough" adapter type is used to disable most local semantic
+            // analysis, so we just map it to the default dialect.
+            "passthrough" => Ok(Default::default()),
+
             _ => internal_err!("Invalid dialect value: '{}'", input),
         }
     }

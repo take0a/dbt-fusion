@@ -189,7 +189,11 @@ pub async fn run_model_event(
         // whether or not the model was skipped
         run_skipped: skipped,
         // the materialization strategy used for that model
-        model_materialization: node.get_dbt_config().materialized.unwrap().to_string(),
+        model_materialization: if let Some(materialization) = node.get_dbt_config().materialized {
+            materialization.to_string()
+        } else {
+            "".to_string()
+        },
         // the incremental strategy used for that model (ex. append, merge, etc.)
         model_incremental_strategy: incremental_strategy,
         // unique identifier for the model

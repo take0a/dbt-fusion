@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use minijinja::{Error as MinijinjaError, Value};
 
-use super::AgateTable;
+use crate::AgateTable;
 
 pub fn print_table(
     table: &Arc<AgateTable>,

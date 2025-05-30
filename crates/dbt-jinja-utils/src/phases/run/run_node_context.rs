@@ -7,6 +7,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Arc;
 
+use dbt_agate::AgateTable;
 use dbt_common::constants::DBT_RUN_DIR_NAME;
 use dbt_common::fs_err;
 use dbt_common::io_args::IoArgs;
@@ -16,7 +17,6 @@ use dbt_common::tokiofs;
 use dbt_common::ErrorCode;
 use dbt_fusion_adapter::adapters::load_store::ResultStore;
 use dbt_fusion_adapter::adapters::utils::create_relation;
-use dbt_fusion_adapter::agate::AgateTable;
 use dbt_schemas::schemas::{common::ResolvedQuoting, manifest::CommonAttributes};
 use minijinja::listener::RenderingEventListener;
 use minijinja::State;
@@ -30,6 +30,7 @@ use super::run_config::RunConfig;
 pub async fn build_run_node_context<T: Serialize, S: Serialize>(
     model: &T,
     common_attr: &CommonAttributes,
+    alias: &str,
     quoting: ResolvedQuoting,
     config: &S,
     adapter_type: &str,
@@ -56,7 +57,7 @@ pub async fn build_run_node_context<T: Serialize, S: Serialize>(
         adapter_type.to_string(),
         common_attr.database.clone(),
         common_attr.schema.clone(),
-        Some(common_attr.name.clone()),
+        Some(alias.to_string()),
         None,
         quoting,
     )

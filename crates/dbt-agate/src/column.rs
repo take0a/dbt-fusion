@@ -1,7 +1,6 @@
-use crate::agate::Tuple;
-
-use super::table::TableRepr;
-use super::{MappedSequence, TupleRepr};
+use crate::table::TableRepr;
+use crate::Tuple;
+use crate::{MappedSequence, TupleRepr};
 use core::fmt;
 use minijinja::listener::RenderingEventListener;
 use minijinja::value::{Enumerator, Object, ObjectRepr};

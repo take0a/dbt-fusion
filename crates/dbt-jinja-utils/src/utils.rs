@@ -273,7 +273,7 @@ pub async fn inject_and_persist_ephemeral_models(
 
 /// Renders SQL with Jinja macros
 #[allow(clippy::too_many_arguments)]
-pub async fn render_sql<'a, E>(
+pub fn render_sql<'a, E>(
     sql: &str,
     env: E,
     ctx: BTreeMap<String, Value>,

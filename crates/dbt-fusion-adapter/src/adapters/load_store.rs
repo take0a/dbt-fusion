@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use crate::adapters::response::{AdapterResponse, ResultObject};
-use crate::agate::AgateTable;
+use dbt_agate::AgateTable;
 
 use super::funcs::none_value;
 
@@ -61,7 +61,7 @@ impl ResultStore {
             let mut results = store.results.lock().unwrap();
             results.insert(name, value);
 
-            Ok(Value::from(true))
+            Ok(Value::from(""))
         }
     }
 
