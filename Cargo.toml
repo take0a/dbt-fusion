@@ -249,7 +249,7 @@ reqwest = { version = "0.12.9", default-features = false, features = [
   "macos-system-configuration",
 ] }
 # latest version depended on by the version of reqwest-retry in use
-reqwest-middleware = { version = "0.4.2" }
+reqwest-middleware = { version = "0.3.3" }
 reqwest-retry = { version = "0.7.0" }
 http = { version = "1.2.0", default-features = false }
 ureq = { version = "3.0.11", default-features = false, features = [
