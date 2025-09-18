@@ -51,6 +51,7 @@ fn new_operation(
 ) -> Vec<Spanned<DbtOperation>> {
     let project_name = &dbt_project.name;
     // Calculate the original file path for dbt_project.yml
+    // dbt_project.yml の元のファイルパスを計算する
     let dbt_project_yml_path = PathBuf::from("dbt_project.yml");
     let original_file_path =
         get_original_file_path(package_base_path, project_root, &dbt_project_yml_path);

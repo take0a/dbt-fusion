@@ -43,6 +43,7 @@ pub trait StatusReporter: Any + Send + Sync {
 }
 
 /// Reads the contents of a file as a string.
+/// ファイルの内容を文字列として読み取ります。
 pub fn try_read_yml_to_str(path: &Path) -> FsResult<String> {
     let mut file = File::open(path).map_err(|e| {
         fs_err!(

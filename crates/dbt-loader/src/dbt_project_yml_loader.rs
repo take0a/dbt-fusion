@@ -27,6 +27,7 @@ pub fn load_project_yml(
     context.insert("var".to_string(), Value::from_function(var_fn(cli_vars)));
 
     // Parse the template without vars using Jinja
+    // Jinjaを使用して変数なしでテンプレートを解析する
     let mut dbt_project: DbtProject = into_typed_with_jinja(
         io_args,
         value_from_file(io_args, dbt_project_path, true, dependency_package_name)?,
@@ -38,6 +39,7 @@ pub fn load_project_yml(
     )?;
 
     // Set default model paths if not specified
+    // 指定されていない場合はデフォルトのモデルパスを設定します
     fill_default(&mut dbt_project.analysis_paths, "analyses");
     fill_default(&mut dbt_project.asset_paths, "assets");
     fill_default(&mut dbt_project.macro_paths, "macros");
@@ -47,6 +49,7 @@ pub fn load_project_yml(
     fill_default(&mut dbt_project.test_paths, "tests");
 
     // We need to add the generic test paths for each test path defined in the project
+    // プロジェクトで定義された各テストパスに汎用テストパスを追加する必要があります。
     for test_path in dbt_project.test_paths.as_deref().unwrap_or_default() {
         let path = PathBuf::from(test_path);
         dbt_project

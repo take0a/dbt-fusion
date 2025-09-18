@@ -7,14 +7,19 @@ use dbt_schemas::state::DbtVars;
 // If no vars have been set, this is the root package and we need to set the global vars
 // It's required that we push the "true" global vars to the vars vector, because these have
 // not been expanded to consider the local package override.
+// 変数が設定されていない場合、これはルート パッケージであり、グローバル変数を設定する必要があります。
+// これらはローカル パッケージのオーバーライドを考慮して展開されていないため、「真の」グローバル変数を 
+// vars ベクトルにプッシュする必要があります。
 pub fn load_vars(
     package_name: &str,
     vars_val: Option<serde_json::Value>,
     collected_vars: &mut Vec<(String, BTreeMap<String, DbtVars>)>,
 ) -> FsResult<()> {
     // Check if vars are set on package
+    // パッケージに変数が設定されているかどうかを確認する
     if let Some(package_vars_val) = vars_val {
         // Load vars from dbt_project.yml def
+        // dbt_project.yml defから変数を読み込む
         let mut vars = serde_json::from_value::<BTreeMap<String, DbtVars>>(package_vars_val)
             .map_err(|e| {
                 fs_err!(
@@ -25,26 +30,33 @@ pub fn load_vars(
                 )
             })?;
         // If no vars have been set yet, this is the root package and we need to set the global vars
+        // まだ変数が設定されていない場合は、これはルートパッケージなので、グローバル変数を設定する必要があります。
         let global_vars = if collected_vars.is_empty() {
             collected_vars.push((package_name.to_string(), vars.clone()));
             BTreeMap::new()
         // Else, simply return the first element which is the global vars
+        // それ以外の場合は、グローバル変数の最初の要素を返すだけです
         } else {
             collected_vars.first().unwrap().1.clone()
         };
         // If there are package vars, extend the vars with the package vars
+        // パッケージ変数がある場合は、パッケージ変数で変数を拡張します
         if let Some(DbtVars::Vars(self_override)) = vars.get(package_name) {
             vars.extend(self_override.clone());
         }
         // Extend the vars with the global vars
+        // グローバル変数で変数を拡張する
         vars.extend(global_vars.clone());
         // If there's a global var matching the package name and it's a BTreeMap, extend vars with it
+        // パッケージ名に一致するグローバル変数があり、それがBTreeMapである場合は、それを使用して変数を拡張します。
         if let Some(DbtVars::Vars(global_package_vars)) = global_vars.get(package_name) {
             vars.extend(global_package_vars.clone());
         }
         collected_vars.push((package_name.to_string(), vars));
     // If package is not root (i.e. collected_vars is not empty) and package has no vars,
     // set the package vars to the global vars (first element of collected_vars)
+    // パッケージがルートでない場合（つまり、collected_varsが空でない場合）、パッケージに変数がない場合、
+    // パッケージの変数をグローバル変数（collected_varsの最初の要素）に設定します。
     } else if !collected_vars.is_empty() {
         let mut package_vars = collected_vars.first().unwrap().1.clone();
         if let Some(DbtVars::Vars(self_override)) = package_vars.get(package_name) {
@@ -52,6 +64,7 @@ pub fn load_vars(
         }
         collected_vars.push((package_name.to_string(), package_vars))
     // If package is root and has no vars, push empty vars to collected_vars
+    // パッケージがルートで変数がない場合は、空の変数を collected_vars にプッシュします。
     } else {
         collected_vars.push((package_name.to_string(), BTreeMap::new()));
     }

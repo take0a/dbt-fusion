@@ -15,6 +15,7 @@ use std::fs;
 use crate::utils::parse_macro_statements;
 
 /// Resolve docs macros from a list of docs macro files
+/// ドキュメントマクロファイルのリストからドキュメントマクロを解決する
 pub fn resolve_docs_macros(
     docs_macro_files: &[DbtAsset],
 ) -> FsResult<BTreeMap<String, DbtDocsMacro>> {
@@ -86,6 +87,7 @@ pub fn resolve_docs_macros(
 }
 
 /// Resolve macros from a list of macro files
+/// マクロファイルのリストからマクロを解決する
 pub fn resolve_macros(
     io: &IoArgs,
     macro_files: &[&DbtAsset],

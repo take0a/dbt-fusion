@@ -385,6 +385,8 @@ impl DefaultTo<NoOpConfig> for NoOpConfig {
 /// Parse the macro sql and return the [SqlResource]s macro wrappers that are
 /// observed during the rendering phase.
 /// path is the path relative to the in_dir
+/// マクロ sql を解析し、レンダリング フェーズ中に確認された [SqlResource] のマクロ ラッパーを返します。
+/// path は in_dir からの相対パスです。
 pub fn parse_macro_statements(
     sql: &str,
     path: &Path,
@@ -400,6 +402,7 @@ pub fn parse_macro_statements(
         WhitespaceConfig::default(),
     );
     // We should throw an error here if we can't process the macro because we shouldn't see any non macro's here
+    // マクロを処理できない場合は、ここでエラーをスローする必要があります。なぜなら、ここではマクロ以外のものはないからです。
     let ast = parser
         .parse_top_level_statements(statement_types)
         .map_err(|e| FsError::from_jinja_err(e, "Failed to parse macro SQL"))?;
@@ -467,6 +470,7 @@ fn extract_sql_resources_from_ast<T: DefaultTo<T>>(
                 }
             }
             // recursively parse the body of the macro for nested macros
+            // マクロ本体を再帰的に解析してネストされたマクロを探す
             for stmt in &macro_node.body {
                 extract_sql_resources_from_ast(stmt, sql_resources, last_func_sign);
             }

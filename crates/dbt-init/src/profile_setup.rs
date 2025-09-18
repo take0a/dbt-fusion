@@ -238,10 +238,16 @@ impl ProfileSetup {
 
     /// Write or update a single profile block in the appropriate profiles.yml,
     /// preserving existing content, order, and comments.
+    /// 既存のコンテンツ、順序、コメントを保持しながら、適切な profiles.yml に
+    /// 単一のプロファイル ブロックを記述または更新します。
     pub fn write_profile(&self, profile_name: &str, profile: &ProfileTarget) -> FsResult<()> {
         // Determine target profiles.yml path:
         // 1) If ./profiles.yml exists, prefer writing there
         // 2) Else write to self.profiles_dir/profiles.yml (creating directory if needed)
+        // 対象の profiles.yml パスを決定します。
+        // 1) ./profiles.yml が存在する場合は、そこに書き込みます。
+        // 2) 存在しない場合は、self.profiles_dir/profiles.yml に書き込みます
+        //   （必要に応じてディレクトリを作成します）。
         let local_profiles = PathBuf::from("profiles.yml");
         let target_file: PathBuf = if local_profiles.exists() {
             local_profiles
@@ -397,6 +403,7 @@ impl ProfileSetup {
         log::info!("{} Setting up your profile...", GREEN.apply_to("Info"));
 
         // Load the profile once at the beginning and cache the result
+        // 最初にプロファイルを一度読み込み、結果をキャッシュします
         let existing_config = if let Some(store) = &self.project_store {
             store.try_load_profile(&self.profiles_dir, profile_name)
         } else {

@@ -38,6 +38,8 @@ pub async fn load_packages(
     // Collect dependency package paths with a flag set to `true`
     // indicating that they are indeed dependencies. This is necessary
     // to differentiate between root project and dependencies later on.
+    // 依存関係パッケージのパスを収集し、それらが実際に依存関係であることを示すフラグを 
+    // `true` に設定します。これは、後でルートプロジェクトと依存関係を区別するために必要です。
     let mut dirs = if packages_install_path.exists() {
         stdfs::read_dir(packages_install_path)?
             .filter_map(|e| e.ok())
@@ -159,6 +161,7 @@ async fn collect_packages(
 ) -> FsResult<Vec<DbtPackage>> {
     let mut packages = vec![];
     // `is_dependency` Indicates if we are loading a dependency or a root project
+    // `is_dependency` は、依存関係またはルートプロジェクトをロードしているかどうかを示します
     for (package_path, is_dependency) in package_paths {
         token.check_cancellation()?;
         if package_path.is_dir() {

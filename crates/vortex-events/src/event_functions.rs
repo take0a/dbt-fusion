@@ -42,6 +42,7 @@ pub fn fusion_sa_event_emitter(enabled: bool) -> Box<dyn DiscreteEventEmitter> {
 }
 
 /// Source-available implementation of the DiscreteEventEmitter.
+/// DiscreteEventEmitter のソース利用可能な実装。
 struct FusionSaEventEmitter {
     enabled: bool,
 }

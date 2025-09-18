@@ -29,8 +29,10 @@ pub fn load_profiles<S: Serialize>(
     )?;
 
     // TODO: Add Secret Renderer logic to profile renderer
+    // TODO: プロファイル レンダラーに Secret Renderer ロジックを追加する
 
     // Load Profiles From ~/.dbt/profiles.yml and the dbt_project_dir
+    // ~/.dbt/profiles.yml と dbt_project_dir からプロファイルをロードする
     let has_dbt_cloud_config_defined = if let Some(dbt_cloud) = raw_dbt_project.dbt_cloud.as_ref() {
         dbt_cloud.project_id.is_some()
     } else {
@@ -64,6 +66,7 @@ pub fn load_profiles<S: Serialize>(
     );
 
     // Load just the keys -> values from the profiles.yml file
+    // profiles.yml ファイルからキー -> 値のみをロードします
     let (target, db_config) = read_profiles_and_extract_db_config(
         &arg.io,
         &arg.target,
@@ -74,6 +77,7 @@ pub fn load_profiles<S: Serialize>(
     )?;
 
     // TODO: Certain databases enforce that database and schema are specified
+    // TODO: 特定のデータベースでは、データベースとスキーマの指定が必須です
     let database = db_config
         .get_database()
         .map(String::as_str)

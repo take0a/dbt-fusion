@@ -159,6 +159,7 @@ pub fn read_profiles_and_extract_db_config<S: Serialize>(
         ))?;
 
     // if dbt_target_override is None, render the target name in case the user uses an an env_var jinja expression here
+    // dbt_target_override が None の場合、ユーザーが env_var jinja 式をここで使用した場合に備えてターゲット名をレンダリングします。
     let rendered_target = if let Some(dbt_target_override) = target_override {
         dbt_target_override.clone()
     } else {
@@ -175,6 +176,7 @@ pub fn read_profiles_and_extract_db_config<S: Serialize>(
     ))?;
 
     // filter the db_targets to only include the target we want to use
+    // 使用したいターゲットのみを含むように db_targets をフィルタリングする
     let unrendered_outputs_filtered: BTreeMap<String, dbt_serde_yaml::Value> = unrendered_outputs
         .as_mapping()
         .unwrap()

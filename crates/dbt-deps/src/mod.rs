@@ -29,6 +29,7 @@ use steps::{
 
 #[allow(clippy::cognitive_complexity)]
 /// Loads and installs packages, and returns the packages lock and the dependencies map
+/// パッケージをロードしてインストールし、パッケージのロックと依存関係マップを返します。
 pub async fn get_or_install_packages(
     io: &IoArgs,
     env: &JinjaEnv,

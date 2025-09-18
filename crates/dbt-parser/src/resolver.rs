@@ -54,6 +54,7 @@ use crate::resolve::resolve_tests::resolve_unit_tests::resolve_unit_tests;
 use crate::resolve::resolve_selectors::resolve_final_selectors;
 
 // Type aliases for clarity
+// 分かりやすさのためにタイプエイリアスを作る
 type YmlValue = dbt_serde_yaml::Value;
 
 /// Entrypoint for the resolve phase.
@@ -63,6 +64,13 @@ type YmlValue = dbt_serde_yaml::Value;
 ///
 /// The final product is the parsed [DbtManifest], along with the collected
 /// macros to be used during compilation.
+/// 
+/// 解決フェーズのエントリポイントです。
+/// 
+/// すべてのプロジェクトソースファイル（モデル、シード、テスト、マクロなど）を解決し、
+/// すべての構成プロパティを伝播する役割を担います。
+///
+/// 最終的な成果物は、解析された [DbtManifest] と、コンパイル時に使用される収集されたマクロです。
 #[tracing::instrument(
     skip_all,
     fields(
@@ -81,6 +89,7 @@ pub async fn resolve(
     let _pb = with_progress!(arg.io, spinner => RESOLVING);
 
     // Get the root project name
+    // ルートプロジェクト名を取得する
     let root_project_name = dbt_state.root_project_name();
 
     // let mut macros = Macros::default();
@@ -88,6 +97,7 @@ pub async fn resolve(
     let mut nodes = nodes;
 
     // First, resolve all of the macros from each package
+    // まず、各パッケージのすべてのマクロを解決します
     for package in &dbt_state.packages {
         token.check_cancellation()?;
 
@@ -122,6 +132,7 @@ pub async fn resolve(
         })?;
 
     // Build the root project config
+    // ルートプロジェクト構成を構築する
     let root_project_quoting =
         resolve_package_quoting(*dbt_state.root_project().quoting, adapter_type);
 
@@ -152,6 +163,7 @@ pub async fn resolve(
     let resolved_selectors = resolve_final_selectors(root_project_name, &jinja_env, arg)?;
 
     // Create a map to store full runtime configs for ALL packages
+    // すべてのパッケージの完全なランタイム構成を保存するマップを作成する
     let mut all_runtime_configs: BTreeMap<String, Arc<DbtRuntimeConfig>> = BTreeMap::new();
 
     // let mut nodes = Nodes::default();
@@ -160,6 +172,7 @@ pub async fn resolve(
         build_root_project_configs(&arg.io, dbt_state.root_project(), root_project_quoting)?;
     let root_project_configs = Arc::new(root_project_configs);
     // Process packages in topological order
+    // パッケージをトポロジカル順序で処理する
     let mut refs_and_sources = RefsAndSources::from_dbt_nodes(
         &nodes,
         adapter_type,
@@ -174,6 +187,7 @@ pub async fn resolve(
     let package_waves = utils::prepare_package_dependency_levels(dbt_state.clone());
 
     // Use sequential processing if num_threads is 1, otherwise use parallel processing
+    // num_threadsが1の場合は順次処理を使用し、それ以外の場合は並列処理を使用します。
     if arg.num_threads == Some(1) {
         let (resolved_nodes, resolved_disabled_nodes, resolved_collector) =
             resolve_packages_sequentially(
@@ -197,6 +211,7 @@ pub async fn resolve(
             .extend(resolved_collector.rendering_results);
     } else {
         // Parallel processing (original implementation)
+        // 並列処理（オリジナル実装）
         let (resolved_nodes, resolved_disabled_nodes, resolved_collector) =
             resolve_packages_parallel(
                 package_waves,
@@ -219,6 +234,7 @@ pub async fn resolve(
             .extend(resolved_collector.rendering_results);
     }
     // Ensure that there are no duplicate relations
+    // 重複した関係がないことを確認する
     check_relation_uniqueness(&nodes)?;
 
     match nodes.warn_on_microbatch() {
@@ -239,6 +255,8 @@ pub async fn resolve(
 
     // take refs and sources, resolve them to a unique_id and put in depends_on
     // This returns a set of node IDs that had resolution errors (unresolved refs/sources)
+    // refsとsourcesを取得し、unique_idに解決してdepends_onに格納します。
+    // これは、解決エラー（未解決のrefs/sources）が発生したノードIDのセットを返します。
     let nodes_with_resolution_errors =
         resolve_dependencies(&arg.io, &mut nodes, &mut disabled_nodes, &refs_and_sources);
 
@@ -359,6 +377,7 @@ fn check_node_access<F>(
 }
 
 /// Inner resolve function that resolves a single package.
+/// 単一のパッケージを解決する内部解決関数。
 #[allow(clippy::too_many_arguments)]
 pub async fn resolve_inner(
     arg: &ResolveArgs,
@@ -389,6 +408,7 @@ pub async fn resolve_inner(
         DISPATCH_CONFIG.get().unwrap().read().unwrap().clone(),
     );
     // Resolve the dbt properties (schema.yml) files
+    // dbtプロパティ（schema.yml）ファイルを解決します
     let mut min_properties = resolve_minimal_properties(
         arg,
         package,
@@ -410,6 +430,7 @@ pub async fn resolve_inner(
 
     for (model_name, minimal_model_props) in &min_properties.models {
         // Extract metrics to be parsed separately because they are not supposed to be rendered with Jinja
+        // Jinjaでレンダリングされないため、個別に解析するメトリックを抽出します。
         let mut maybe_model_metrics_yml: Option<YmlValue> = None;
         let mut model_yml = minimal_model_props.clone().schema_value;
         if let Some(m) = model_yml.as_mapping_mut() {
@@ -437,6 +458,7 @@ pub async fn resolve_inner(
     }
 
     // Resolve sources based on the dbt_state, database, schema, and project name
+    // dbt_state、データベース、スキーマ、プロジェクト名に基づいてソースを解決します
     let (sources, disabled_sources) = resolve_sources(
         arg,
         package,
@@ -455,6 +477,7 @@ pub async fn resolve_inner(
     disabled_nodes.sources.extend(disabled_sources);
 
     // Resolve seeds based on the dbt_state, database, schema, and project name
+    // dbt_state、データベース、スキーマ、プロジェクト名に基づいてシードを解決します
     let (seeds, disabled_seeds) = resolve_seeds(
         arg,
         min_properties.seeds,
@@ -475,6 +498,7 @@ pub async fn resolve_inner(
     disabled_nodes.seeds.extend(disabled_seeds);
 
     // Resolve snapshots based on the dbt_state, database, schema, and project name
+    // dbt_state、データベース、スキーマ、プロジェクト名に基づいてスナップショットを解決します
     let (snapshots, disabled_snapshots) = resolve_snapshots(
         arg,
         package,
@@ -497,6 +521,7 @@ pub async fn resolve_inner(
     disabled_nodes.snapshots.extend(disabled_snapshots);
 
     // Resolve SQLs and get nodes and rendered SQLs except refs and sources
+    // SQL を解決し、参照とソースを除くノードとレンダリングされた SQL を取得します。
     let (models, rendering_results, disabled_models) = resolve_models(
         arg,
         package,
@@ -692,6 +717,7 @@ pub fn check_relation_uniqueness(nodes: &Nodes) -> FsResult<()> {
 }
 
 /// Resolves a single package asynchronously.
+/// 単一のパッケージを非同期的に解決します。
 #[allow(clippy::too_many_arguments)]
 async fn resolve_package(
     package_name: String,
@@ -766,6 +792,7 @@ async fn resolve_package(
 }
 
 /// Resolves packages sequentially (single-threaded).
+/// パッケージを順番に解決します (シングルスレッド)。
 #[allow(clippy::too_many_arguments)]
 async fn resolve_packages_sequentially(
     package_waves: Vec<Vec<String>>,
@@ -831,6 +858,7 @@ async fn resolve_packages_sequentially(
 }
 
 /// Resolves packages in parallel using tokio::spawn.
+/// tokio::spawn を使用してパッケージを並列に解決します。
 #[allow(clippy::too_many_arguments)]
 async fn resolve_packages_parallel(
     package_waves: Vec<Vec<String>>,
@@ -886,6 +914,7 @@ async fn resolve_packages_parallel(
         }
 
         // Wait for all packages in this wave to finish, then merge results and update configs
+        // このウェーブのすべてのパッケージが終了するまで待ってから、結果をマージして構成を更新します。
         for handle in handles {
             let result = handle.await;
             let (
@@ -901,14 +930,17 @@ async fn resolve_packages_parallel(
                 Err(e) => return Err(fs_err!(ErrorCode::Unexpected, "Join error: {}", e)),
             };
             // Update runtime configs for next wave
+            // 次のウェーブのランタイム構成を更新します
             all_runtime_configs.insert(package_name.clone(), runtime_config);
             // Merge results in main thread
+            // メインスレッドで結果をマージする
             nodes.extend(new_nodes);
             disabled_nodes.extend(new_disabled_nodes);
             collector
                 .rendering_results
                 .extend(rendering_results.rendering_results);
             // This could be optimized refs and sources can all be inserted at the end instead of merging
+            // これは最適化された参照であり、ソースはすべてマージする代わりに最後に挿入できます。
             refs_and_sources.merge(updated_refs_and_sources);
         }
     }

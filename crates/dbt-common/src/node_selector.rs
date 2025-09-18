@@ -415,6 +415,18 @@ pub fn parse_single_selector(raw: &str) -> FsResult<SelectionCriteria> {
 /// * A list of N criteria joined by the same operator collapses to
 ///   `SelectExpression::And(vec)` or `SelectExpression::Or(vec)` where `vec.len() == N`.
 /// * We never wrap a single Atom in an unnecessary `And/Or`.
+/// 
+/// トークン化された CLI リスト（Clap によって空白で分割済み）を `SelectExpression` ツリーに変換します。
+///
+/// * **外側のレベル**: 空白で区切られた各トークンは *OR* 項です。
+/// * **内側のレベル**: 各トークン内では、カンマ `,` によって *AND* 項が区切られます。
+///
+/// いくつかの補助的な不変式により、ロジックの理解が容易になります。
+/// 
+/// * 単一の条件は `SelectExpression::Atom` になります。
+/// * 同じ演算子で結合された N 個の条件のリストは、`SelectExpression::And(vec)` または 
+///   `SelectExpression::Or(vec)` に集約されます。ここで、`vec.len() == N` です。
+/// * 単一の Atom を不必要な `And/Or` で囲むことはありません。
 pub fn parse_model_specifiers(tokens: &[String]) -> FsResult<SelectExpression> {
     if tokens.is_empty() {
         return Err(fs_err!(

@@ -71,6 +71,7 @@ pub async fn load(
         load_simplified_project_and_profiles(arg).await?;
 
     // Check if .gitignore exists and add dbt_internal_packages/ if not present
+    // .gitignore が存在するかどうかを確認し、存在しない場合は dbt_internal_packages/ を追加します。
     let gitignore_path = arg.io.in_dir.join(".gitignore");
     if gitignore_path.exists() {
         let gitignore_content = fs::read_to_string(&gitignore_path)?;
@@ -128,6 +129,7 @@ pub async fn load(
     };
 
     // If we are running `dbt debug` we don't need to collect dbt_project.yml files
+    // `dbt debug` を実行している場合は、dbt_project.yml ファイルを収集する必要はありません。
     if arg.debug_profile {
         return Ok((dbt_state, final_threads, simplified_dbt_project.dbt_cloud));
     }
@@ -189,6 +191,7 @@ pub async fn load(
     }
 
     // Load the packages.yml file, if it exists and install the packages if arg.install_deps is true
+    // 存在する場合はpackages.ymlファイルを読み込み、arg.install_depsがtrueの場合はパッケージをインストールします。
     let (packages_install_path, internal_packages_install_path) = get_packages_install_path(
         &arg.io.in_dir,
         &arg.packages_install_path,
@@ -209,6 +212,7 @@ pub async fn load(
     )
     .await?;
     // get publication artifact for each upstream project
+    // 各上流プロジェクトの公開アーティファクトを取得する
     download_publication_artifacts(
         &upstream_projects,
         &simplified_dbt_project.dbt_cloud,
@@ -216,6 +220,7 @@ pub async fn load(
     )
     .await?;
     // If we are running `dbt deps` we don't need to collect files
+    // `dbt deps` を実行している場合は、ファイルを収集する必要はありません。
     if arg.install_deps {
         return Ok((dbt_state, final_threads, simplified_dbt_project.dbt_cloud));
     }
@@ -259,6 +264,7 @@ pub async fn load_simplified_project_and_profiles(
     arg: &LoadArgs,
 ) -> FsResult<(DbtProjectSimplified, DbtProfile)> {
     // Read the input file
+    // 入力ファイルを読む
     let dbt_project_path = arg.io.in_dir.join(DBT_PROJECT_YML);
 
     let raw_dbt_project_in_val = value_from_file(&arg.io, &dbt_project_path, false, None)?;
@@ -320,12 +326,14 @@ pub async fn load_inner(
     package_path: &Path,
     dbt_profile: &DbtProfile,
     // Indicates if we are loading a dependency or a root project
+    // 依存関係またはルートプロジェクトをロードしているかどうかを示します
     is_dependency: bool,
     package_lookup_map: &BTreeMap<String, String>,
     skip_dependencies: bool,
     collected_vars: &mut Vec<(String, BTreeMap<String, DbtVars>)>,
 ) -> FsResult<DbtPackage> {
     // all read files
+    // すべての読み取りファイル
     let mut all_files: HashMap<ResourcePathKind, Vec<(PathBuf, SystemTime)>> = HashMap::new();
 
     let dbt_project_path = package_path.join(DBT_PROJECT_YML);
@@ -363,6 +371,7 @@ pub async fn load_inner(
         collected_vars,
     )?;
     // Set dispatch config for future use
+    // 今後の使用に備えてディスパッチ構成を設定する
     if package_path == arg.io.in_dir {
         let dispatch_config_map = if let Some(dispatch_configs) = dbt_project.dispatch.clone() {
             dispatch_configs
@@ -378,6 +387,7 @@ pub async fn load_inner(
             BTreeMap::new()
         };
         // Only set the dispatch config on first load of the project (mainly impacts testing)
+        // プロジェクトの最初のロード時にのみディスパッチ構成を設定します（主にテストに影響します）
         if DISPATCH_CONFIG.get().is_none() {
             DISPATCH_CONFIG
                 .set(RwLock::new(dispatch_config_map))
@@ -389,18 +399,21 @@ pub async fn load_inner(
     all_files.insert(ResourcePathKind::SessionPaths, session_files);
 
     // Collect file paths and their timestamps for fields with a suffix `_paths`
+    // `_paths` という接尾辞を持つフィールドのファイルパスとそのタイムスタンプを収集します
     let all_dirs = collect_paths(&dbt_project);
     let all_included_files: HashMap<ResourcePathKind, Vec<(PathBuf, SystemTime)>> =
         collect_all_files(all_dirs, package_path)?;
     all_files.extend(all_included_files);
 
     // make all paths relative to the project directory
+    // すべてのパスをプロジェクトディレクトリからの相対パスにする
     for (_, files) in all_files.iter_mut() {
         for (path, _) in files.iter_mut() {
             *path = diff_paths(&mut *path, package_path).unwrap().to_path_buf();
         }
         //
         // make deterministic: Sort files based on their relative paths
+        // 決定論的にする: 相対パスに基づいてファイルを並べ替える
         files.sort_by(|a, b| a.0.cmp(&b.0));
     }
 
@@ -574,6 +587,7 @@ fn should_exclude_path(kind: &ResourcePathKind, path: &Path) -> bool {
     match kind {
         ResourcePathKind::TestPaths => {
             // Only exclude paths directly under <test-paths>/generic/
+            // <test-paths>/generic/ 直下のパスのみを除外します
             let components: Vec<_> = path.components().collect();
             components.len() >= 2 && components[1].as_os_str() == "generic"
         }

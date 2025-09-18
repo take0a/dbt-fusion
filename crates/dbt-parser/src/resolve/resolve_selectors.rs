@@ -24,6 +24,20 @@ use crate::args::ResolveArgs;
 ///    - CLI indirect selection mode (fallback if not specified in YAML)
 ///
 /// Returns the final include and exclude expressions to be used by the scheduler.
+/// 
+/// YAMLからセレクタを解決し、最終的な包含/除外式を計算します。
+/// これは、selectors.ymlファイルの解析と、スケジューラが使用する最終的な式の計算を組み合わせたものです。
+///
+/// 関数：
+/// 1. Jinjaテンプレートを使用して、YAMLからセレクタを解析および解決します。
+/// 2. デフォルトとしてマークされているセレクタが1つだけであることを検証します。
+/// 3. 以下の基準に基づいて、最終的な包含/除外式を計算します。
+///     - CLIセレクタフラグまたはデフォルトセレクタ
+///     - セレクタの包含/除外式
+///     - CLI包含/除外フラグ
+///     - CLI間接選択モード（YAMLで指定されていない場合はフォールバック）
+///
+/// スケジューラが使用する最終的な包含/除外式を返します。
 pub fn resolve_final_selectors(
     root_package_name: &str,
     jinja_env: &JinjaEnv,
@@ -32,12 +46,14 @@ pub fn resolve_final_selectors(
     let path = arg.io.in_dir.join("selectors.yml");
     if !path.exists() {
         // No YAML selectors - apply CLI indirect selection to any CLI select/exclude
+        // YAMLセレクターなし - CLI間接選択を任意のCLI選択/除外に適用します
         let mut resolved = ResolvedSelector {
             include: arg.select.clone(),
             exclude: arg.exclude.clone(),
         };
 
         // Apply CLI indirect selection to both include and exclude expressions
+        // CLI間接選択を包含式と除外式の両方に適用する
         if let Some(cli_mode) = arg.indirect_selection {
             if let Some(ref mut include) = resolved.include {
                 include.apply_default_indirect_selection(cli_mode);
@@ -60,6 +76,7 @@ pub fn resolve_final_selectors(
     );
 
     // Parse and resolve selectors from YAML
+    // YAML からセレクタを解析して解決する
     let yaml: SelectorFile = match dbt_jinja_utils::serde::into_typed_with_jinja(
         &arg.io,
         raw_selectors,
@@ -80,6 +97,7 @@ pub fn resolve_final_selectors(
     };
 
     // Build selector definitions map and resolve each selector
+    // セレクタ定義マップを構築し、各セレクタを解決する
     let defs = yaml
         .selectors
         .iter()
@@ -100,6 +118,7 @@ pub fn resolve_final_selectors(
     }
 
     // Validate only one default selector
+    // デフォルトセレクタを1つだけ検証する
     if resolved_selectors.values().filter(|e| e.is_default).count() > 1 {
         return err!(
             ErrorCode::SelectorError,
@@ -108,6 +127,7 @@ pub fn resolve_final_selectors(
     }
 
     // Find default selector name if no explicit selector provided
+    // 明示的なセレクタが指定されていない場合はデフォルトのセレクタ名を検索する
     let default_sel_name = resolved_selectors.iter().find_map(|(name, entry)| {
         // Command line arguments (if provided) take precedence over the default
         if entry.is_default && !(arg.select.is_some() || arg.exclude.is_some()) {
@@ -118,8 +138,10 @@ pub fn resolve_final_selectors(
     });
 
     // Use explicit selector, default selector, or fall back to CLI flags
+    // 明示的なセレクタ、デフォルトセレクタを使用するか、CLIフラグにフォールバックします
     if let Some(sel_name) = arg.selector.as_ref().or(default_sel_name.as_ref()) {
         // Look up selector and error if missing
+        // セレクタを検索し、見つからない場合はエラーを表示します
         let entry = resolved_selectors.get(sel_name.as_str()).ok_or_else(|| {
             fs_err!(
                 ErrorCode::SelectorError,
@@ -129,12 +151,14 @@ pub fn resolve_final_selectors(
         })?;
 
         // Use selector's include and apply CLI indirect selection as fallback
+        // セレクタの include を使用し、フォールバックとして CLI 間接選択を適用する
         let mut include = entry.include.clone();
         if let Some(cli_mode) = arg.indirect_selection {
             include.set_indirect_selection(cli_mode);
         }
 
         // Set exclude to CLI exclude and apply CLI indirect selection as fallback
+        // 除外を CLI 除外に設定し、フォールバックとして CLI 間接選択を適用する
         let mut exclude = arg.exclude.clone();
         if let (Some(cli_mode), Some(exc)) = (arg.indirect_selection, exclude.as_mut()) {
             exc.set_indirect_selection(cli_mode);
@@ -146,6 +170,7 @@ pub fn resolve_final_selectors(
         })
     } else {
         // No selector chosen → use CLI flags and apply CLI indirect selection
+        // セレクタが選択されていません → CLI フラグを使用し、CLI 間接選択を適用します
         let mut resolved = ResolvedSelector {
             include: arg.select.clone(),
             exclude: arg.exclude.clone(),

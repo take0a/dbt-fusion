@@ -29,6 +29,7 @@ const DEFAULT_LIMIT: &str = "10";
 static DEFAULT_FORMAT: LazyLock<String> = LazyLock::new(|| DisplayFormat::Table.to_string());
 
 // defined in pretty string, but copied here to avoid cycle...
+// きれいな文字列で定義されていますが、循環参照を避けるためにここにコピーされています...
 static BOLD: LazyLock<Style> = LazyLock::new(|| Style::new().bold());
 
 // ----------------------------------------------------------------------------------------------
@@ -86,6 +87,7 @@ pub enum Commands {
     Clean(CleanArgs),
 
     /// Create reference documentation (json schema for artifacts)
+    /// リファレンスドキュメントを作成する（成果物のJSONスキーマ）
     Man(ManArgs),
 }
 
@@ -293,6 +295,9 @@ impl Cli {
     pub fn to_eval_args(&self, system_arg: SystemArgs) -> FsResult<EvalArgs> {
         // Determine the input and output directories based on the command.
         // Some commands operate without project context, while others must be run in a project directory.
+        // コマンドに基づいて入力ディレクトリと出力ディレクトリを決定します。
+        // 一部のコマンドはプロジェクト コンテキストなしで動作しますが、
+        // 他のコマンドはプロジェクト ディレクトリで実行する必要があります。
         let (in_dir, out_dir) = {
             match &self.command {
                 Commands::Man(_) | Commands::Init(_) => {

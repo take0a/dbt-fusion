@@ -245,6 +245,7 @@ pub fn check_if_profile_exists(profile_name: &str, profiles_dir: &str) -> FsResu
 }
 
 /// Main init workflow that handles both project creation and profile setup
+/// プロジェクトの作成とプロファイルの設定の両方を処理するメインの初期化ワークフロー
 pub async fn run_init_workflow(
     project_name: Option<String>,
     skip_profile_setup: bool,
@@ -256,6 +257,7 @@ pub async fn run_init_workflow(
     let inside_existing_project = is_in_dbt_project();
 
     // Determine whether the user explicitly provided a project name.
+    // ユーザーがプロジェクト名を明示的に指定したかどうかを判断します。
     let (mut project_name, user_specified_project_name) = match project_name {
         Some(name) => (name, true),
         None => ("jaffle_shop".to_string(), false),
@@ -263,6 +265,8 @@ pub async fn run_init_workflow(
 
     // CASE 1: Inside an existing project **and** the user did NOT provide a new project name →
     // behave like dbt-core: only set up (or update) a profile.
+    // ケース 1: 既存のプロジェクト内で、**かつ** ユーザーが新しいプロジェクト名を指定しなかった場合 → 
+    // dbt-core のように動作し、プロファイルの設定 (または更新) のみを行います。
     if inside_existing_project && !user_specified_project_name {
         if existing_profile.is_some() {
             return Err(fs_err!(
@@ -277,6 +281,7 @@ pub async fn run_init_workflow(
         );
 
         // Create or update .vscode/extensions.json even when skipping project creation
+        // プロジェクトの作成をスキップした場合でも .vscode/extensions.json を作成または更新する
         create_or_update_vscode_extensions(Path::new("."))?;
 
         if !skip_profile_setup {
@@ -289,9 +294,12 @@ pub async fn run_init_workflow(
 
     // CASE 2: Either we're not in a project, **or** the user asked for a new project explicitly –
     // proceed to create the sample project directory.
+    // ケース 2: プロジェクト内にいないか、**または** ユーザーが明示的に新しいプロジェクトを要求しました。
+    // サンプル プロジェクト ディレクトリの作成に進みます。
 
     {
         // If the chosen project directory already exists, find the next available
+        // 選択したプロジェクトディレクトリがすでに存在する場合は、次に利用可能なディレクトリを検索します。
         if Path::new(&project_name).exists() {
             let unique_name = next_available_dir_name(&project_name);
             log::info!(
@@ -304,6 +312,7 @@ pub async fn run_init_workflow(
         }
 
         // Validate profile if specified
+        // 指定されている場合はプロファイルを検証します
         if let Some(ref profile_name) = existing_profile {
             if !check_if_profile_exists(profile_name, &profiles_dir)? {
                 return Err(fs_err!(
@@ -315,13 +324,16 @@ pub async fn run_init_workflow(
         }
 
         // Create the project
+        // プロジェクトを作成する
         let project_dir = Path::new(&project_name);
         init_project(&project_name, project_dir)?;
 
         // Create or update .vscode/extensions.json in the new project
+        // 新しいプロジェクトで.vscode/extensions.jsonを作成または更新します。
         create_or_update_vscode_extensions(project_dir)?;
 
         // Change to project directory
+        // プロジェクトディレクトリに変更
         env::set_current_dir(&project_name)?;
 
         log::info!(
@@ -336,6 +348,7 @@ pub async fn run_init_workflow(
         );
 
         // Setup profile if not skipped
+        // スキップしない場合はプロファイルを設定する
         if !skip_profile_setup {
             let profile_name = existing_profile
                 .as_ref()
@@ -343,6 +356,7 @@ pub async fn run_init_workflow(
                 .unwrap_or_else(|| project_name.clone());
 
             // Only run profile setup if we don't have an existing profile specified
+            // 既存のプロファイルが指定されていない場合にのみプロファイル設定を実行します
             if existing_profile.is_none() {
                 profile_setup.setup_profile(&profile_name).await?;
             }

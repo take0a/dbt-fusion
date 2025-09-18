@@ -42,11 +42,14 @@ pub async fn execute_fs(
 ) -> FsResult<i32> {
     // Resolve EvalArgs from SystemArgs and Cli. This will create out folders,
     // for commands that need it and canonicalize the paths. May error on invalid paths.
+    // SystemArgsとCliからEvalArgsを解決します。これにより、必要なコマンド用のフォルダが作成され、
+    // パスが正規化されます。無効なパスの場合はエラーが発生する可能性があります。
     let eval_arg = cli.to_eval_args(system_arg)?;
 
     init_logger((&eval_arg.io).into()).expect("Failed to initialize logger");
 
     // Create the Invocation span as a new root
+    // 呼び出しスパンを新しいルートとして作成する
     let invocation_span = create_root_info_span!(create_invocation_attributes("dbt-sa", &eval_arg));
 
     let result = do_execute_fs(&eval_arg, cli, token)
@@ -54,6 +57,7 @@ pub async fn execute_fs(
         .await;
 
     // Record span run result
+    // スパン実行結果を記録する
     match result {
         Ok(0) => record_span_status(&invocation_span, None),
         Ok(_) => record_span_status(&invocation_span, Some("Executed with errors")),
@@ -138,6 +142,7 @@ async fn execute_setup_and_all_phases(
 ) -> FsResult<i32> {
     // Header ..
     // current_exe errors when running in dbt-cloud
+    // dbt-cloud で実行中に current_exe エラーが発生する
     // https://github.com/rust-lang/rust/issues/46090
     #[cfg(debug_assertions)]
     {
@@ -196,6 +201,7 @@ async fn execute_all_phases(
     let start = SystemTime::now();
 
     // Loads all .yml files + collects all included files
+    // すべての .yml ファイルを読み込み、含まれるすべてのファイルを収集します
     let load_args = LoadArgs::from_eval_args(arg);
     let invocation_args = InvocationArgs::from_eval_args(arg);
     let (dbt_state, num_threads, _dbt_cloud) = load(&load_args, &invocation_args, token).await?;
@@ -206,10 +212,12 @@ async fn execute_all_phases(
     show_result_with_default_title!(&arg.io, ShowOptions::InputFiles, &dbt_state.to_string());
 
     // This also exits the init command b/c init `to_eval_args` sets the phase to debug
+    // これによって、init `to_eval_args` がフェーズをデバッグに設定するため、init コマンドも終了します。
     checkpoint_maybe_exit!(Phases::Debug, &arg, start);
     checkpoint_maybe_exit!(Phases::Deps, &arg, start);
 
     // Parses (dbt parses) all .sql files with execute == false
+    // execute == false のすべての .sql ファイルを解析します (dbt parses で)
     let resolve_args = ResolveArgs::try_from_eval_args(&arg)?;
     let invocation_args = InvocationArgs::from_eval_args(&arg);
     let arc_dbt_state = Arc::new(dbt_state);

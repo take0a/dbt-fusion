@@ -9,6 +9,7 @@ use minijinja::{
 use crate::functions::DocMacro;
 
 /// Builds a context for resolving models
+/// モデルを解決するためのコンテキストを構築する
 pub fn build_resolve_context(
     root_project_name: &str,
     local_project_name: &str,

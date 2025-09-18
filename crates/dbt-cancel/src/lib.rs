@@ -21,6 +21,14 @@ pub struct CancelledError;
 /// If `E` can represent the cancellation state, the user can provide
 /// an implementation of `From<CancelledError>` for `E` to convert
 /// `Cancellable::Cancelled` into `E` automatically.
+///
+/// 任意のエラー型 `E` をキャンセル可能なエラー型に変換します。
+/// 
+/// `Result<T, Cancellable<E>>` を返す関数は、操作がキャンセルされたことを示すために 
+/// `Err(Cancellable::Cancelled)` を返すことができます。
+///
+/// `E` がキャンセル状態を表現できる場合、ユーザーは `E` に対して `From<CancelledError>` の
+/// 実装を提供することで、`Cancellable::Cancelled` を `E` に自動的に変換できます。
 #[derive(Debug)]
 pub enum Cancellable<E> {
     Cancelled,
@@ -31,6 +39,7 @@ impl<E: From<CancelledError>> Cancellable<E> {
     /// Flatten `Cancellable<E>` into `E`.
     ///
     /// This relies on the `From<CancelledError>` implementation for `E`.
+    /// これは、`E` の `From<CancelledError>` 実装に依存します。
     pub fn flatten(self) -> E {
         match self {
             Cancellable::Cancelled => E::from(CancelledError),
@@ -62,6 +71,13 @@ struct InnerCST {
 /// [CancellationToken]s can be issued with `.token()`. `.cancel()` can be called to
 /// cancel all tokens issued so far. Additionally, if the [CancellationTokenSource]
 /// is dropped, all tokens issued from it will be considered cancelled.
+/// 
+/// キャンセル要求を通知するために使用できるキャンセル トークンのソース。
+/// 
+/// [CancellationToken]は`.token()`で発行できます。
+/// `.cancel()`を呼び出すと、これまでに発行されたすべてのトークンがキャンセルされます。
+/// また、[CancellationTokenSource]が削除された場合、そこから発行されたすべてのトークンは
+/// キャンセルされたとみなされます。
 ///
 /// ```rust
 /// # use dbt_common::cancellation::{
@@ -134,12 +150,14 @@ impl CancellationTokenSource {
     }
 
     /// Issues a fresh cancellation token from this source.
+    /// このソースから新しいキャンセル トークンを発行します。
     pub fn token(&self) -> CancellationToken {
         let request_id = self.inner.request_id.load(Ordering::Acquire);
         CancellationToken::new(Arc::downgrade(&self.inner), request_id)
     }
 
     /// Cancels all tokens created from this source so far.
+    /// これまでこのソースから作成されたすべてのトークンをキャンセルします。
     #[inline]
     pub fn cancel(&self) {
         self.inner.request_id.fetch_add(1, Ordering::AcqRel);
@@ -147,6 +165,7 @@ impl CancellationTokenSource {
 }
 
 /// Internal trait for cancellation token implementations.
+/// キャンセル トークン実装の内部トレイト。
 trait CancellationTokenLike: fmt::Debug + Send + Sync + 'static {
     fn is_cancelled(&self) -> bool;
     fn clone_box(&self) -> Box<dyn CancellationTokenLike>;
@@ -207,6 +226,14 @@ impl CancellationTokenLike for CancellationTokenWithFlagImpl {
 /// cancelled, it will return `true` for `is_cancelled()`. Tasks should
 /// check the cancellation state periodically using `check_cancellation()`
 /// or `is_cancelled()` directly.
+/// 
+/// キャンセル要求を確認するために使用できるキャンセル トークン。
+/// 
+/// [CancellationTokenSource] からトークンが作成され、それを使用して行われた操作が
+/// キャンセルされたかどうかを確認するために使用できます。
+/// トークンがキャンセルされた場合、`is_cancelled()` に `true` が返されます。
+/// タスクは `check_cancellation()` または `is_cancelled()` を直接使用して、
+/// 定期的にキャンセル状態を確認する必要があります。
 #[derive(Debug)]
 pub struct CancellationToken {
     inner: Box<dyn CancellationTokenLike>,
@@ -234,11 +261,17 @@ impl CancellationToken {
     ///
     /// Useful in tests and as a escape hatch when cancellation
     /// tokens haven't been passed through call chains yet.
+    /// 
+    /// キャンセルされないキャンセル トークンを作成します。
+    /// 
+    /// テストや、キャンセル トークンが呼び出しチェーンにまだ渡されていない場合の
+    /// 脱出口として役立ちます。
     pub fn never_cancels() -> Self {
         NEVER_CANCELS_CST.token()
     }
 
     /// Checks if the token has been cancelled.
+    /// トークンがキャンセルされたかどうかを確認します。
     #[inline]
     pub fn is_cancelled(&self) -> bool {
         self.inner.is_cancelled()
@@ -251,6 +284,8 @@ impl CancellationToken {
     /// - `Result<T, E>` for any `E` that implements `From<CancelledError>`
     /// - `Result<T, Cancellable<E>>` for any `E`
     /// - `Result<T, CancelledError>`
+    /// 
+    /// トークンがキャンセルされたかどうかを確認し、 `Result` を返します。
     #[inline]
     pub fn check_cancellation(&self) -> Result<(), CancelledError> {
         if self.is_cancelled() {
@@ -265,6 +300,12 @@ impl CancellationToken {
     /// This allows for additional cancellation logic based on an external flag.
     /// This cancellation token will be cancelled if either the original token
     /// is cancelled or the shared `should_cancel_flag` is set to `true`.
+    /// 
+    /// このキャンセル トークンを、キャンセルに設定できるフラグと組み合わせます。
+    /// 
+    /// これにより、外部フラグに基づいた追加のキャンセルロジックが可能になります。
+    /// このキャンセルトークンは、元のトークンがキャンセルされるか、共有フラグ
+    /// 「should_cancel_flag」が「true」に設定されている場合にキャンセルされます。
     pub fn combine_with_flag(self, should_cancel_flag: Arc<AtomicBool>) -> CancellationToken {
         let inner = Box::new(CancellationTokenWithFlagImpl {
             inner: self.inner,
@@ -278,6 +319,11 @@ impl CancellationToken {
 ///
 /// Useful in tests and as a escape hatch when cancellation
 /// tokens haven't been passed through call chains yet.
+/// 
+/// キャンセルされないキャンセル トークンを作成します。
+/// 
+/// テストや、キャンセル トークンが呼び出しチェーンにまだ渡されていない場合の
+/// 脱出口として役立ちます。
 pub fn never_cancels() -> CancellationToken {
     CancellationToken::never_cancels()
 }

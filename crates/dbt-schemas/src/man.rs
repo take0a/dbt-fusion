@@ -20,6 +20,7 @@ use serde_json::to_string_pretty;
 
 pub async fn execute_man_command(arg: &EvalArgs) -> FsResult<i32> {
     // create an error if arg.schema.is_empty
+    // arg.schema.is_empty の場合にエラーを生成する
     if arg.schema.is_empty() {
         let available_schemas: Vec<String> = JsonSchemaTypes::iter()
             .map(|s| s.to_string().to_lowercase())

@@ -1,6 +1,9 @@
 //! Convert YAML selectors (as parsed by `dbt-schemas`) into the
 //! `SelectExpression` + *optional* `exclude` expression that the
 //! scheduler understands.
+//! 
+//! YAML セレクター (`dbt-schemas` によって解析されたもの) を、スケジューラーが理解できる 
+//! `SelectExpression` + *オプションの* `exclude` 式に変換します。
 //
 
 use std::{collections::BTreeMap, str::FromStr};
@@ -57,6 +60,7 @@ impl<'a> SelectorParser<'a> {
         let mut exclude_expr: Option<SelectExpression> = None;
 
         // Get the operator and values from the single entry map
+        // 単一エントリマップから演算子と値を取得する
         let (op_kind, values) = comp
             .kind
             .iter()
@@ -72,6 +76,7 @@ impl<'a> SelectorParser<'a> {
 
         for value in values {
             // Check if this value is an exclude expression
+            // この値が除外式であるかどうかを確認します
             if let SelectorDefinitionValue::Full(SelectorExpr::Atom(AtomExpr::Exclude(exclude))) =
                 value
             {
@@ -91,6 +96,7 @@ impl<'a> SelectorParser<'a> {
         }
 
         // Build the boolean operator over includes
+        // include にブール演算子を構築する
         let include_expr = match op_kind {
             CompositeKind::Union(_) => SelectExpression::Or(includes),
             CompositeKind::Intersection(_) => SelectExpression::And(includes),
@@ -99,10 +105,16 @@ impl<'a> SelectorParser<'a> {
         // If we have an exclude expression, we need to handle this specially
         // For now, let's create a structure that represents "include this but exclude that"
         // We'll use a custom approach that the scheduler can handle
+        // 除外式がある場合は、これを特別に処理する必要があります。
+        // とりあえず、「これを含めるが、あれは除外する」という表現の構造を作成しましょう。
+        // スケジューラが処理できるカスタムアプローチを使用します。
         if let Some(exclude) = exclude_expr {
             // Create a structure that represents the composite with exclude
             // We'll use a special marker that the scheduler can recognize
             // For now, let's just return the include expression and handle the exclude in the scheduler
+            // 除外を含む複合表現を表す構造体を作成します。
+            // スケジューラが認識できる特別なマーカーを使用します。
+            // とりあえず、include式を返して、除外はスケジューラで処理します。
             return Ok(SelectExpression::And(vec![
                 include_expr,
                 SelectExpression::Exclude(Box::new(exclude)),
@@ -116,13 +128,17 @@ impl<'a> SelectorParser<'a> {
         match atom {
             AtomExpr::Method(expr) => {
                 // Special handling for selector method - recursively resolve the referenced selector
+                // セレクタメソッドの特別な処理 - 参照されたセレクタを再帰的に解決する
                 if expr.method == "selector" {
                     // Recursively resolve the referenced selector
+                    // 参照されたセレクタを再帰的に解決する
                     let referenced_selector = self.parse_named(&expr.value)?;
 
                     // Note: Per the docs, graph operators (parents, children, etc.) are NOT
                     // supported for selector inheritance, so we ignore them and return the
                     // referenced selector's include expression as-is
+                    // 注: ドキュメントによると、グラフ演算子 (親、子など) はセレクターの継承ではサポートされていないため、
+                    // それらを無視して、参照されたセレクターの include 式をそのまま返します。
                     if expr.childrens_parents
                         || expr.parents
                         || expr.children
@@ -137,9 +153,11 @@ impl<'a> SelectorParser<'a> {
                     }
 
                     // Return the referenced selector's include expression
+                    // 参照されたセレクタのinclude式を返す
                     Ok(referenced_selector)
                 } else {
                     // Use atom_to_select_expression which handles the exclude field properly
+                    // 除外フィールドを適切に処理する atom_to_select_expression を使用する
                     self.atom_to_select_expression(AtomExpr::Method(MethodAtomExpr {
                         method: expr.method.clone(),
                         value: expr.value.clone(),
@@ -275,6 +293,7 @@ impl<'a> SelectorParser<'a> {
             }
             AtomExpr::Exclude(expr) => {
                 // A standalone exclude atom - this becomes a top-level exclude
+                // スタンドアロンの除外アトム - これはトップレベルの除外になります
                 let exprs = self.collect_definition_includes(&expr.exclude)?;
                 let exclude_expr = match exprs.len() {
                     0 => return Err(fs_err!(ErrorCode::SelectorError, "Empty exclude list")),

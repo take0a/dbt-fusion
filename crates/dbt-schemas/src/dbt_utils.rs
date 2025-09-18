@@ -32,6 +32,7 @@ pub fn get_dbt_schema_version(name: &str, version: i16) -> String {
 }
 
 /// Resolve package quoting config
+/// パッケージの引用設定を解決する
 pub fn resolve_package_quoting(
     quoting: Option<DbtQuoting>,
     adapter_type: AdapterType,

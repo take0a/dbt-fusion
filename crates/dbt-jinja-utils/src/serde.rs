@@ -1,4 +1,5 @@
 //! Provides the machineries to deserialize and process dbt YAML files.
+//! dbt YAML ファイルをデシリアル化および処理するための仕組みを提供します。
 //!
 //! # Basic primitives
 //!
@@ -10,12 +11,27 @@
 //!
 //! There's also a shorthand, [`into_typed_raw<T>`], which is basically syntactic
 //! sugar for `into_typed_with_jinja<Verbatim<T>>`.
+//! 
+//! # 基本的なプリミティブ
+//! 
+//! * [`value_from_str()`]: この関数は、Yaml 文字列から `yaml::Value` を作成し、
+//!   重複キーに対して適切な警告を出力します。
+//! * [`into_typed_with_jinja<T>`]: この関数は、`yaml::Value` を引数として 
+//!   `Deserialize` 型の `T` を構築し、`T` にエンコードされたルールに従って Jinja を適用します。
+//! 
+//! [`into_typed_raw<T>`] という省略形もあります。
+//! これは基本的に `into_typed_with_jinja<Verbatim<T>>` のシンタックスシュガーです。
 //!
 //! # Types
 //!
 //! * [`Omissible<T>`]: this is a wrapper type for use in
 //!   `#[derive(Deserialize)]` structs, which allows you to distinguish between
 //!   "omitted" and "explicit null" values.
+//! 
+//! # 型
+//! 
+//! * [`Omissible<T>`]: これは `#[derive(Deserialize)]` 構造体で使用するラッパー型で、
+//!   これにより「省略された」値と「明示的な null」値を区別できます。
 //!
 //! # General usage guidelines
 //!
@@ -67,6 +83,51 @@
 //!   general `#[serde(untagged)]` enums which requires backtracking during
 //!   deserialization, `ShouldBe<T>` does not backtrack and is zero overhead on
 //!   the happy path (see type documentation for more details).
+//! 
+//! # 一般的な使用ガイドライン
+//! 
+//! * `value_from_str` によって構築される `yaml::Value` オブジェクト（および再帰的にすべての子 
+//!   `Value` オブジェクト）は、*ソースの位置に関して完全に自己完結的です*。
+//!   つまり、`Value` を受け取って、それを渡したり、組み合わせたり、適切な Jinja コンテキストがあれば 
+//!   `into_typed` することができ、常に正しい位置情報でエラーが発生することが保証されます。
+//!   (つまり、`yaml::Value` を Yaml ソースの AST として使用できます)
+//! 
+//! * `#[derive(Deserialize)]` スキーマでは、「遅延 Jinja」処理が必要なフィールドには 
+//!   `Verbatim<Value>` を使用します。一方、フィールドを Jinja で処理する必要がない場合は、
+//!   次のように、プリミティブ型に直接 `Verbatim` を代入できます。 `pub git: Verbatim<String>`
+//! 
+//! * deferred-jinja でディスクから Yaml ファイルを再読み込みしないようにします。
+//!   `yaml::Value` に簡単に読み込んで「raw」処理を行い、完全な Jinja コンテキストがある場合にのみ 
+//!   Jinja を適用できるようになりました。
+//! 
+//! * Yaml 構造体で `json::Value` を使用しないでください。
+//!   重複フィールドが適切にサポートされるようになったため、重複フィールドを暗黙的に処理するために 
+//!   `json::Value` を使用する必要がなくなりました。
+//! 
+//! * Yaml フィールドのソースコードの場所を取得するには、`dbt_serde_yaml::Spanned` ラッパー型を使用します。
+//! 
+//! * `Option<Verbatim<T>>` は実装上の制限により期待どおりに動作しません。
+//!   代わりに常に `Verbatim<Option<T>>` を使用してください。
+//! 
+//! * `#[serde(flatten)]` の使用を避けます。`Verbatim<T>` は `#[serde(flatten)]` では動作しません。
+//!   代わりに、`__` で始まって終わるフィールド名 (例: `__additional_properties__`) を使用してください。
+//!   このような名前付きフィールドはすべて、`#[serde(flatten)]` で注釈が付けられているかのように、
+//!   `dbt_serde_yaml` によってフラット化されます。
+//!   **注意** 
+//!   このようなフィールドを含む構造体は、デフォルトの serde シリアライザーでは正しくシリアル化されません。
+//!   このようなフィールドを含む構造体を (再) シリアル化する必要がある場合 (たとえば、`minijinja::Value` 
+//!   に)、*まず* `yaml::Value` にシリアル化し、次に `yaml::Value` をターゲット形式にシリアル化してください。
+//! 
+//! * `Verbatim<T>` や `flatten_dunder` フィールドなどの "magic" dbt-serde_yaml 機能を含むタグなし列挙型 
+//!   (`#[serde(untagged)]`) は、デフォルトの `#[derive(Deserialize)]` デコレータでは動作しません。
+//!   代わりに `#[derive(UntaggedEnumDeserialize)]` を使用してください
+//!    (注: `UntaggedEnumDeserialize` はタグなし列挙型でのみ動作します。
+//!   その他の型では、デフォルトの `#[derive(Deserialize)]` デコレータを使用してください)。
+//! 
+//! * デシリアライズ中にエラーを回復するという特定のユースケースでは、`dbt_serde_yaml::ShouldBe<T>` 
+//!   ラッパー型を優先する必要があります。デシリアライズ中にバックトラックを必要とする一般的な 
+//!   `#[serde(untagged)]` 列挙型とは異なり、`ShouldBe<T>` はバックトラックせず、ハッピー パスの
+//!   オーバーヘッドはゼロです(詳細については、型のドキュメントを参照してください)。
 
 use std::{
     path::{Path, PathBuf},
@@ -92,6 +153,11 @@ pub use dbt_common::serde_utils::Omissible;
 ///
 /// `dependency_package_name` is used to determine if the file is part of a dependency package,
 /// which affects how errors are reported.
+/// 
+/// エラー報告用のファイルの絶対パスを使用して、YAML ファイルを `Value` に逆シリアル化します。
+/// 
+/// `dependency_package_name` は、ファイルが依存パッケージの一部であるかどうかを判断するために使用され、
+/// エラーの報告方法に影響します。
 pub fn value_from_file(
     io_args: &IoArgs,
     path: &Path,
@@ -113,6 +179,11 @@ pub fn value_from_file(
 ///
 /// `dependency_package_name` is used to determine if the file is part of a dependency package,
 /// which affects how errors are reported.
+/// 
+/// Jinja 式を含む Yaml `Value` をターゲットの `Deserialize` 型 T にレンダリングします。
+/// 
+/// `dependency_package_name` は、ファイルが依存パッケージの一部であるかどうかを判断するために使用され、
+/// エラーの報告方法に影響します。
 pub fn into_typed_with_jinja<T, S>(
     io_args: &IoArgs,
     value: Value,
@@ -223,6 +294,11 @@ where
 ///
 /// `dependency_package_name` is used to determine if the file is part of a dependency package,
 /// which affects how errors are reported.
+/// 
+/// Yaml 文字列を Rust 型 T にデシリアライズします。
+///
+/// `dependency_package_name` は、ファイルが依存パッケージの一部であるかどうかを判断するために使用され、
+/// エラーの報告方法に影響します。
 pub fn from_yaml_raw<T>(
     io_args: &IoArgs,
     input: &str,
@@ -241,6 +317,7 @@ where
         dependency_package_name,
     )?;
     // Use the identity transform for the 'raw' version of this function.
+    // この関数の 'raw' バージョンには恒等変換を使用します。
     let expand_jinja = |_: &Value| Ok(None);
 
     let (res, errors) = into_typed_internal(value, expand_jinja)?;
@@ -252,6 +329,8 @@ where
             {
                 // If we are parsing a dependency package, we use a special macros
                 // that ensures at most one error is shown per package.
+                // 依存パッケージを解析する場合は、
+                // パッケージごとに最大 1 つのエラーが表示されるようにする特別なマクロを使用します。
                 show_package_error!(io_args, package_name);
             } else {
                 show_strict_error!(io_args, error, dependency_package_name);
@@ -317,6 +396,12 @@ fn trim_beginning_whitespace_for_first_line_with_content(input: &str) -> String 
 ///
 /// `dependency_package_name` is used to determine if the file is part of a dependency package,
 /// which affects how errors are reported.
+/// 
+/// YAML 文字列を `Value` にデシリアライズする内部関数です。
+/// error_display_path は、正規化された絶対パスである必要があります。
+/// 
+/// `dependency_package_name` は、ファイルが依存パッケージの一部であるかどうかを
+/// 判断するために使用され、エラーの報告方法に影響します。
 fn value_from_str(
     io_args: &IoArgs,
     input: &str,
@@ -328,6 +413,8 @@ fn value_from_str(
 
     // replace tabs with spaces
     // trim beginning whitespace for the first line with content
+    // タブをスペースに置き換えます
+    // コンテンツを含む最初の行の先頭の空白を削除します
     let input = replace_tabs_with_spaces(input);
     let input = trim_beginning_whitespace_for_first_line_with_content(&input);
     let mut value = Value::from_str(&input, |path, key, existing_key| {

@@ -57,8 +57,10 @@ impl MinimalProperties {
         base_ctx: &BTreeMap<String, MinijinjaValue>,
     ) -> FsResult<()> {
         // TODO: This is a bit repetetive. Can be shortened!
+        // TODO: 少し繰り返しが多いので、短くできます。
         if let Some(models) = other.models {
             // Extend but error on duplicate keys
+            // 拡張しますが、重複キーでエラーが発生します
             for model_value in models {
                 let model = into_typed_with_jinja::<MinimalSchemaValue, _>(
                     io_args,
